@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "cheerio": "*",
+    "discord.js": "^12.5.1",
+    "form-data": "^4.0.0",
+    "html-to-text": "^7.0.0",
+    "node-fetch": "^2.6.1"
+  }
+}
