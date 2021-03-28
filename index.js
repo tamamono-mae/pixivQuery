@@ -62,7 +62,7 @@ client.on('ready', () => {
 client.on("messageReactionAdd", (messageReaction) => {
   db('cacheMsg').where('sourceChannel', messageReaction.message.channel.id).andWhere('replyId', messageReaction.message.id).select('sourceUserId').then(rows => {
     rows.forEach((entry) => {
-      if (messageReaction.users.cache.has(entry.sourceUserId)) {
+      if (messageReaction.users.cache.has(entry.sourceUserId) && messageReaction.emoji.name == '🗑️') {
         client.channels.cache.get(messageReaction.message.channel.id).messages.fetch(messageReaction.message.id).then(message => {
           message.delete();
         });

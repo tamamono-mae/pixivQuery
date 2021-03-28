@@ -63,9 +63,11 @@ async function pixivQuery(illustId){
     "url": "https://www.pixiv.net/artworks/"+JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['illustId'],
     "name": JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['userName'],
     "userId": JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['userId'],
+    "illustId": illustId,
     "timestamp": JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['createDate'].substr(0, 19)+'.000Z',
     "image": 'https://pixiv.cat/'+illustId+imgCount(JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['pageCount'])+'.jpg',
-    "thumbnail": JSON.parse($("#meta-preload-data").attr("content"))['user'][JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['userId']]['imageBig'].replace('pximg.net','pixiv.cat')
+    "thumbnail": JSON.parse($("#meta-preload-data").attr("content"))['user'][JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['userId']]['imageBig'].replace('pximg.net','pixiv.cat'),
+    "xRestrict": JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['xRestrict']
   };
 
 }
@@ -79,16 +81,16 @@ function query2msg(data,source){
           "title": data['title'],
           "description": data['description'],
           "url": data['url'],
-          "color": 5814783,
+          "color": data['xRestrict'] == 0 ? 4036607 : 13859410,
           "fields": [
             {
-              "name": "作者",
+              "name": "作者 Pixiv",
               "value": "["+data['name']+"](https://www.pixiv.net/users/"+data['userId']+")",
                 "inline": true
               },
               {
-                "name": "Pixiv ID",
-                "value": "["+data['userId']+"](https://www.pixiv.net/users/"+data['userId']+")",
+                "name": "Illust ID",
+                "value": "["+data['illustId']+"]("+data['url']+")",
                   "inline": true
                 }
               ],
