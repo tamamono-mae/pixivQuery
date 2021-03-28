@@ -44,16 +44,19 @@ function mkfd(url) {
   return formdata;
 }
 
-function imgCount(pageCount) {
-  return pageCount > 1 ? "-1" : "";
+function imgCount(pageCount,currentPage) {
+  if(currentPage == null)
+    return pageCount > 1 ? "-1" : "";
+  else if(currentPage <= pageCount && pageCount > 1)
+    return '-' + currentPage;
+  else return pageCount > 1 ? "-1" : "";
 }
 
-async function pixivQuery(illustId){
+async function pixivQuery(illustId, currentPage){
   //var formdata = mkfd(url);
   let body = await fetch('https://www.pixiv.net/artworks/'+illustId)
   .then(res => res.text());
   let $ = cheerio.load(body);
-
   return {
     "title": JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['illustTitle'],
     "description": htmlToText(JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['illustComment'],{
@@ -65,15 +68,16 @@ async function pixivQuery(illustId){
     "userId": JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['userId'],
     "illustId": illustId,
     "timestamp": JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['createDate'].substr(0, 19)+'.000Z',
-    "image": 'https://pixiv.cat/'+illustId+imgCount(JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['pageCount'])+'.jpg',
+    "image": 'https://pixiv.cat/'+illustId+imgCount(JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['pageCount'], currentPage)+'.jpg',
     "thumbnail": JSON.parse($("#meta-preload-data").attr("content"))['user'][JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['userId']]['imageBig'].replace('pximg.net','pixiv.cat'),
+    "pageCount": JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['pageCount'],
     "xRestrict": JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['xRestrict']
   };
 
 }
 
-function query2msg(data,source){
-  switch (source) {
+function query2msg(data,type){
+  switch (type) {
     case 'pixiv':
     return {
       "embed":
