@@ -12,7 +12,7 @@ const db = require('knex')({
 });
 const logger = winston.createLogger({
   level: 'info',
-  //format: winston.format.json(),
+  format: winston.format.json(),
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.json()
@@ -41,6 +41,10 @@ function urlDump(msg) {
   return null;
 }
 
+function permissionCheck(messageObject, permission = 8192){
+  return messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(permission);
+}
+
 function pageSwitch(entry, client, messageReaction, isForward, isReactionRemove = false) {
   q.pixivQuery(urlDump(entry.sourceContent)['data'], entry.currentPage+pageOffset(isForward)).then(result => {
     client.channels.cache.get(messageReaction.message.channel.id).messages.fetch(messageReaction.message.id).then(message => {
@@ -64,7 +68,7 @@ client.login(config.BOT_TOKEN);
 
 client.on("message", function(srcMessage) {
   var is_dm = srcMessage.channel.type == 'dm';
-  if (srcMessage.author.bot) return;
+  if (srcMessage.author.bot || !permissionCheck(srcMessage, 85056)) return;
   //if (!message.content.startsWith(config.prefix) && !is_dm) return;
   //var msgbody = (is_dm) ? message.content : message.content.slice(config.prefix.length);
   if (urlDump(srcMessage.content)) {
@@ -81,7 +85,8 @@ client.on("message", function(srcMessage) {
     q.pixivQuery(urlDump(srcMessage.content)['data'], 1).then(result => {
       srcMessage.channel.send(q.query2msg(result,urlDump(srcMessage.content)['website'])).then(
         message => {
-          message.react('🗑️');
+          if (result.pageCount > 1)
+            message.react('⏮️');
           dbLog['replyId'] = message.id;
           dbLog['pageCount'] = result.pageCount;
           dbLog['currentPage'] = 1;
@@ -89,15 +94,14 @@ client.on("message", function(srcMessage) {
           return message;
         }
       ).then(message => {
-        if (result.pageCount > 1)
-          message.react('⏮️');
-        return message;
-      }).then(message => {
         message.react('👍');
         return message;
       }).then(message => {
         if (result.pageCount > 1)
           message.react('⏭️');
+        return message;
+      }).then(message => {
+        message.react('🗑️');
         return message;
       }).then(message => {
         db('cacheMsg').insert([dbLog]).then(()=>{});
@@ -112,6 +116,8 @@ client.on("message", function(srcMessage) {
           replyContent: message.embeds[0]
         });
       });
+    }).then(() => {
+      if (permissionCheck(srcMessage)) srcMessage.suppressEmbeds(true);
     })
   }
 });
@@ -140,6 +146,8 @@ client.on("messageReactionAdd", (messageReaction) => {
           sourceGuild: messageReaction.message.channel.guild.id,
         });
       };
+      if ((messageReaction.emoji.name == '⏭️' || messageReaction.emoji.name == '⏮️') && entry.pageCount > 1 && messageReaction.count > 1 && permissionCheck(messageReaction.message))
+        messageReaction.users.remove(messageReaction.users.cache.array().pop());
       if (messageReaction.emoji.name == '⏭️' && entry.currentPage < entry.pageCount && entry.pageCount > 1 && messageReaction.count > 1) {
         pageSwitch(entry, client, messageReaction, true);
       }
@@ -153,10 +161,10 @@ client.on("messageReactionAdd", (messageReaction) => {
 client.on("messageReactionRemove", (messageReaction) => {
   db('cacheMsg').where('sourceChannel', messageReaction.message.channel.id).andWhere('replyId', messageReaction.message.id).select('sourceUserId', 'sourceContent', 'pageCount', 'currentPage').then(rows => {
     rows.forEach((entry) => {
-      if (messageReaction.emoji.name == '⏭️' && entry.currentPage < entry.pageCount && entry.pageCount > 1) {
+      if (messageReaction.emoji.name == '⏭️' && entry.currentPage < entry.pageCount && entry.pageCount > 1 && !permissionCheck(messageReaction.message)) {
         pageSwitch(entry, client, messageReaction, true, true);
       }
-      if (messageReaction.emoji.name == '⏮️' && entry.currentPage > 1 && entry.pageCount > 1) {
+      if (messageReaction.emoji.name == '⏮️' && entry.currentPage > 1 && entry.pageCount > 1 && !permissionCheck(messageReaction.message)) {
         pageSwitch(entry, client, messageReaction, false, true);
       }
     });
