@@ -55,7 +55,7 @@ async function pixivQuery(illustId, currentPage){
   let body = await fetch('https://www.pixiv.net/artworks/'+illustId)
   .then(res => res.text());
   let $ = cheerio.load(body);
-  return {
+  return ($("#meta-preload-data").length > 0) ? {
     "title": JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['illustTitle'],
     "description": htmlToText(JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['illustComment'],{
       tags: { 'a': { options: { ignoreHref: true } } },
@@ -71,7 +71,7 @@ async function pixivQuery(illustId, currentPage){
     "pageCount": JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['pageCount'],
     "xRestrict": JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['xRestrict'],
     "currentPage": currentPage
-  };
+  } : null;
 }
 
 function query2msg(data,type){

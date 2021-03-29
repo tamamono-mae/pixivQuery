@@ -1,7 +1,7 @@
 const npath = require('path');
 const Discord = require("discord.js");
 const winston = require('winston');
-const config = require("../token/config3.json");
+const config = require("../token/config2.json");
 const q = require("./query.js");
 const db = require('knex')({
   client: 'sqlite3',
@@ -83,6 +83,7 @@ client.on("message", function(srcMessage) {
       type: urlDump(srcMessage.content)['website']
     };
     q.pixivQuery(urlDump(srcMessage.content)['data'], 1).then(result => {
+      if (!result) throw new Error('meta-preload-data not found!');
       srcMessage.channel.send(q.query2msg(result,urlDump(srcMessage.content)['website'])).then(
         message => {
           if (result.pageCount > 1)
@@ -118,7 +119,7 @@ client.on("message", function(srcMessage) {
       });
     }).then(() => {
       if (permissionCheck(srcMessage)) srcMessage.suppressEmbeds(true);
-    })
+    }).catch((error) => logger.error(error.message))
   }
 });
 
