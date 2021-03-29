@@ -6,6 +6,7 @@
     "html-to-text": "^7.0.0",
     "knex": "^0.95.4",
     "node-fetch": "^2.6.1",
-    "sqlite3": "^5.0.2"
+    "sqlite3": "^5.0.2",
+    "winston": "^3.3.3"
   }
 }

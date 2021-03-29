@@ -1,4 +1,6 @@
+const npath = require('path');
 const Discord = require("discord.js");
+const winston = require('winston');
 const config = require("../token/config3.json");
 const q = require("./query.js");
 const db = require('knex')({
@@ -7,6 +9,19 @@ const db = require('knex')({
     filename: "../env/pixivQuery.db"
   },
   useNullAsDefault: true
+});
+const logger = winston.createLogger({
+  level: 'info',
+  //format: winston.format.json(),
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  defaultMeta: { service: 'user-service' },
+  transports: [
+    new winston.transports.Console(),
+    new winston.transports.File({ filename: npath.join(__dirname, '/pixivQuery.log') })
+  ],
 });
 const client = new Discord.Client();
 let patt = {
@@ -19,14 +34,14 @@ function pageOffset(isForward){
 }
 
 function urlDump(msg) {
-  if (msg.match(patt['pixiv']) != null)
+  if (msg.match(patt['pixiv']))
     return { "data" :msg.match(patt['pixiv'])[1] , "website": 'pixiv'};
-  if (msg.match(patt['pixivE']) != null)
+  if (msg.match(patt['pixivE']))
     return { "data" :msg.match(patt['pixivE'])[1] , "website": 'pixiv'};
   return null;
 }
 
-function pageSwitch(entry, client, messageReaction, isForward) {
+function pageSwitch(entry, client, messageReaction, isForward, isReactionRemove = false) {
   q.pixivQuery(urlDump(entry.sourceContent)['data'], entry.currentPage+pageOffset(isForward)).then(result => {
     client.channels.cache.get(messageReaction.message.channel.id).messages.fetch(messageReaction.message.id).then(message => {
       message.edit(q.query2msg(result,urlDump(entry.sourceContent)['website']));
@@ -35,6 +50,14 @@ function pageSwitch(entry, client, messageReaction, isForward) {
   db('cacheMsg').where('sourceChannel', messageReaction.message.channel.id).andWhere('replyId', messageReaction.message.id).update({
     currentPage: entry.currentPage+pageOffset(isForward)
   }).then(()=>{});
+  logger.info({
+    type: isForward ? 'Next page' : 'Previous page',
+    sourceId: messageReaction.message.id,
+    sourceUserId: isReactionRemove ? 'Unknown' : messageReaction.users.cache.array().pop().id,
+    sourceTimestamp: Date.now(),
+    sourceChannel: messageReaction.message.channel.id,
+    sourceGuild: messageReaction.message.channel.guild.id,
+  });
 }
 
 client.login(config.BOT_TOKEN);
@@ -44,7 +67,7 @@ client.on("message", function(srcMessage) {
   if (srcMessage.author.bot) return;
   //if (!message.content.startsWith(config.prefix) && !is_dm) return;
   //var msgbody = (is_dm) ? message.content : message.content.slice(config.prefix.length);
-  if (urlDump(srcMessage.content) != null) {
+  if (urlDump(srcMessage.content)) {
     var dbLog = {
       time: Date.now(),
       sourceId: srcMessage.id,
@@ -55,7 +78,7 @@ client.on("message", function(srcMessage) {
       sourceGuild: srcMessage.guild.id,
       type: urlDump(srcMessage.content)['website']
     };
-    q.pixivQuery(urlDump(srcMessage.content)['data'], null).then(result => {
+    q.pixivQuery(urlDump(srcMessage.content)['data'], 1).then(result => {
       srcMessage.channel.send(q.query2msg(result,urlDump(srcMessage.content)['website'])).then(
         message => {
           message.react('🗑️');
@@ -63,17 +86,31 @@ client.on("message", function(srcMessage) {
           dbLog['pageCount'] = result.pageCount;
           dbLog['currentPage'] = 1;
           //dbLog['replyContent'] = message.content;
-          return message
+          return message;
         }
       ).then(message => {
         if (result.pageCount > 1)
           message.react('⏮️');
-        return message
+        return message;
+      }).then(message => {
+        message.react('👍');
+        return message;
       }).then(message => {
         if (result.pageCount > 1)
           message.react('⏭️');
-      }).then(()=>{
+        return message;
+      }).then(message => {
         db('cacheMsg').insert([dbLog]).then(()=>{});
+        logger.info({
+          type:'Reply',
+          sourceId: dbLog.sourceId,
+          sourceUserId: dbLog.sourceUserId,
+          sourceTimestamp: dbLog.sourceTimestamp,
+          sourceContent:dbLog.sourceContent,
+          sourceChannel: dbLog.sourceChannel,
+          sourceGuild: dbLog.sourceGuild,
+          replyContent: message.embeds[0]
+        });
       });
     })
   }
@@ -93,6 +130,15 @@ client.on("messageReactionAdd", (messageReaction) => {
           message.delete();
         });
         db('cacheMsg').where('sourceChannel', messageReaction.message.channel.id).andWhere('replyId', messageReaction.message.id).del().then(()=>{});
+        logger.info({
+          type:'Delete',
+          sourceId: messageReaction.message.id,
+          sourceUserId: entry.sourceUserId,
+          sourceTimestamp: Date.now(),
+          sourceContent:messageReaction.message.embeds[0],
+          sourceChannel: messageReaction.message.channel.id,
+          sourceGuild: messageReaction.message.channel.guild.id,
+        });
       };
       if (messageReaction.emoji.name == '⏭️' && entry.currentPage < entry.pageCount && entry.pageCount > 1 && messageReaction.count > 1) {
         pageSwitch(entry, client, messageReaction, true);
@@ -108,10 +154,10 @@ client.on("messageReactionRemove", (messageReaction) => {
   db('cacheMsg').where('sourceChannel', messageReaction.message.channel.id).andWhere('replyId', messageReaction.message.id).select('sourceUserId', 'sourceContent', 'pageCount', 'currentPage').then(rows => {
     rows.forEach((entry) => {
       if (messageReaction.emoji.name == '⏭️' && entry.currentPage < entry.pageCount && entry.pageCount > 1) {
-        pageSwitch(entry, client, messageReaction, true);
+        pageSwitch(entry, client, messageReaction, true, true);
       }
       if (messageReaction.emoji.name == '⏮️' && entry.currentPage > 1 && entry.pageCount > 1) {
-        pageSwitch(entry, client, messageReaction, false);
+        pageSwitch(entry, client, messageReaction, false, true);
       }
     });
   });

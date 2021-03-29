@@ -45,9 +45,7 @@ function mkfd(url) {
 }
 
 function imgCount(pageCount,currentPage) {
-  if(currentPage == null)
-    return pageCount > 1 ? "-1" : "";
-  else if(currentPage <= pageCount && pageCount > 1)
+  if(currentPage <= pageCount && pageCount > 1)
     return '-' + currentPage;
   else return pageCount > 1 ? "-1" : "";
 }
@@ -71,9 +69,9 @@ async function pixivQuery(illustId, currentPage){
     "image": 'https://pixiv.cat/'+illustId+imgCount(JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['pageCount'], currentPage)+'.jpg',
     "thumbnail": JSON.parse($("#meta-preload-data").attr("content"))['user'][JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['userId']]['imageBig'].replace('pximg.net','pixiv.cat'),
     "pageCount": JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['pageCount'],
-    "xRestrict": JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['xRestrict']
+    "xRestrict": JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['xRestrict'],
+    "currentPage": currentPage
   };
-
 }
 
 function query2msg(data,type){
@@ -82,7 +80,7 @@ function query2msg(data,type){
     return {
       "embed":
         {
-          "title": data['title'],
+          "title": data['title']+ (data['pageCount'] > 1 ? (' ('+data['currentPage']+'/'+data['pageCount']+')') : ''),
           "description": data['description'],
           "url": data['url'],
           "color": data['xRestrict'] == 0 ? 4036607 : 13859410,
@@ -111,10 +109,8 @@ function query2msg(data,type){
                 "url": data['thumbnail']
               }
           }
-
     }
     break;
-
     default:
 
   }
