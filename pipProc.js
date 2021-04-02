@@ -1,5 +1,7 @@
 /*
-sudo mount -t vboxsf -o uid=$UID,gid=$(id -g)
+sudo mount -t vboxsf -o uid=$UID,gid=$(id -g) pixivQuery pixivQuery
+sudo mount -t vboxsf -o uid=$UID,gid=$(id -g) env env
+sudo mount -t vboxsf -o uid=$UID,gid=$(id -g) token token
 instruction fetch >> authtication (iP/oP) >> process >> resultCheck >> response
 function embedMessage
   查詢pixiv => embedMessage
@@ -17,35 +19,62 @@ function 查圖
     function 查圖
 */
 const config = require("../token/config3.json");
+const functionEnableDefault = 0x7F;
+const cacheDb = require('knex')({
+  client: 'sqlite3',
+  connection: {
+    filename: "../env/pixivQuery.db"
+  },
+  useNullAsDefault: true
+});
+const configDb = require('knex')({
+  client: 'sqlite3',
+  connection: {
+    filename: "../env/pixivQueryConfig.db"
+  },
+  useNullAsDefault: true
+});
+
 let textInstructionSet = {
   "pixiv" : {
     "patt": /^.*\.pixiv\..*\/(\d+)/i ,
     "opCode": "textQuery",
     "varMap": {
       "pixivID": 1
-    }
+    },
+    "varExt": {
+      "website": "pixiv"
+    },
+    "dstTable": ['cacheMsg']
   },
   "pixivE": {
     "patt": /^.*\.pixiv\..*member_illust\.php.*illust_id=(\d+)/i ,
     "opCode": "textQuery",
     "varMap": {
       "pixivID": 1
-    }
+    },
+    "varExt": {
+      "website": "pixiv"
+    },
+    "dstTable": ['cacheMsg']
   },
   "urlQuery": {
     "patt": /^(https|http):\/\/(.+)(.jpg|.png)/i ,
     "opCode": "urlQuery",
     "varMap": {
-      "url": 1
-    }
+      "url": 0
+    },
+    "dstTable": ['cacheMsg']
   },
   "moduleSwitch": {
-    "patt": new RegExp(`^${config.prefix} (.+) (enable|disable)`,'i'),
+    "patt": new RegExp(`^${config.prefix} (.+) (enable|disable)( global)*`,'i'),
     "opCode": 'moduleSwitch',
     "varMap": {
       "botModule": 1,
-      "operation": 2
-    }
+      "operation": 2,
+      "isGlobal": 3
+    },
+    "dstTable": ['guildFunction', 'channelFunction']
   },
   "noOperation": {
     "patt": new RegExp(`.*`,'i'),
@@ -60,40 +89,140 @@ let textInstructionSet = {
 刪除
 翻頁
 */
+let reactionSet = {
+  "nextPage": {
+    "patt": "⏭️" ,
+    "opCode": "pageSwitch",
+    "varExt": {
+      "isNext": true
+    },
+    "dstTable": ['cacheMsg']
+  },
+  "previousPage": {
+    "patt": "⏮️" ,
+    "opCode": "pageSwitch",
+    "varExt": {
+      "isNext": false
+    },
+    "dstTable": ['cacheMsg']
+  },
+  "removeEmbedMsg": {
+    "patt": "🗑️" ,
+    "opCode": "removeEmbedMsg",
+    "dstTable": ['cacheMsg']
+  }
+};
+
 let permissionOpCode = {
   /* guildOwner txtmanager srcMessageUser member */
-  "textQuery" : { perm: 0xF , bit: 0},
-  "urlQuery" : { perm: 0xF , bit: 1},
-  "imgQuery" : { perm: 0xF , bit: 2},
+  "textQuery" : { perm: 0xF , bit: 0 },
+  "urlQuery" : { perm: 0xF , bit: 1 },
+  "imgQuery" : { perm: 0xF , bit: 2 },
   "moduleSwitch": { perm: 0xC },
   "removeEmbedMsg": { perm: 0xE },
   "pageSwitch": { perm: 0xF }
 }
 
-function instructionDecode(msg) {
+function returnBit(botModule) {
+  return permissionOpCode[botModule]['bit'];
+}
+
+function readFunctionEnable(dstTable, messageObject) {
+  let guildEnable = configDb(dstTable[0])
+  .where('guildId', messageObject.guild.id)
+  .then(rows => {
+    if (rows.length > 0) return rows[0]['functionEnable'];
+    else {
+      return configDb(dstTable[0]).insert([{
+        "guildId" : messageObject.guild.id,
+        "functionEnable" : functionEnableDefault
+      }]).then(()=>{
+        return functionEnableDefault;
+      });
+    }
+  });
+  let channelEnable = configDb(dstTable[1])
+  .where('guildId', messageObject.guild.id)
+  .andWhere('channelId', messageObject.channel.id)
+  .then(rows => {
+    if (rows.length > 0) return rows[0]['functionEnable'];
+    else {
+      return configDb(dstTable[1]).insert([{
+        "guildId" : messageObject.guild.id,
+        "channelId" : messageObject.channel.id,
+        "functionEnable" : functionEnableDefault
+      }]).then(()=>{
+        return functionEnableDefault;
+      });
+    }
+  });
+  return Promise.all([guildEnable , channelEnable]);
+}
+
+function reactionDecode(messageReaction) {
   return new Promise((resolve, reject) => {
-    if(!msg) reject('No instruction!')
-    for (i=0;i<Object.keys(textInstructionSet).length;i++){
-      if (msg.match(Object.values(textInstructionSet)[i]['patt'])){
+    if(!messageReaction) reject('No instruction!');
+    for (i=0;i<Object.keys(reactionSet).length;i++){
+      if (messageReaction.emoji.name == Object.values(reactionSet)[i]['patt']){
         data = {};
-        Object.keys(Object.values(textInstructionSet)[i]['varMap']).forEach((index) => {
-          //data[index] = msg.match(Object.values(textInstructionSet)[i]['patt'])[Object.values(textInstructionSet)[i]['varMap'][index]];
-          data[index] = msg.match(Object.values(textInstructionSet)[i]['patt'])[Object.values(textInstructionSet)[i]['varMap'][index]];
-        })
+        if(Object.values(reactionSet)[i]['varExt'])
+          Object.keys(
+            Object.values(reactionSet)[i]['varExt'])
+            .forEach((index) => {
+              data[index] = Object.values(reactionSet)[i]['varExt'][index];
+            }
+          );
+        resolve({
+          "opCode": Object.values(reactionSet)[i]['opCode'],
+          "data": data,
+          "dstTable": Object.values(reactionSet)[i]['dstTable']
+        });
         break;
       }
     }
-    resolve({
-      "opCode": Object.values(textInstructionSet)[i]['opCode'],
-      "data": data
-    });
   });
 }
 
-function permissionCheckUser(opCode, messageObject, authorId) {
+function instructionDecode(msg) {
+  return new Promise((resolve, reject) => {
+    if(!msg) reject('No instruction!');
+    for (i=0;i<Object.keys(textInstructionSet).length;i++){
+      if (msg.match(Object.values(textInstructionSet)[i]['patt'])){
+        data = {};
+        Object.keys(
+          Object.values(textInstructionSet)[i]['varMap']).forEach((index) => {
+          //data[index] = msg.match(Object.values(textInstructionSet)[i]['patt'])[Object.values(textInstructionSet)[i]['varMap'][index]];
+            data[index] = msg.match(Object.values(textInstructionSet)[i]['patt'])[Object.values(textInstructionSet)[i]['varMap'][index]];
+            }
+          );
+        if(Object.values(textInstructionSet)[i]['varExt'])
+          Object.keys(
+            Object.values(textInstructionSet)[i]['varExt'])
+            .forEach((index) => {
+              data[index] = Object.values(textInstructionSet)[i]['varExt'][index];
+            }
+          );
+        resolve({
+          "opCode": Object.values(textInstructionSet)[i]['opCode'],
+          "data": data,
+          "dstTable": Object.values(textInstructionSet)[i]['dstTable']
+        });
+        break;
+      }
+    }
+  });
+}
+
+function permissionCheckUser(opCode, messageObject = null, authorId, reactionObject = null) {
+  if(messageObject)
   p = ((messageObject.channel.guild.ownerID == messageObject.author.id ? 0x8:0)
-    | (messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(0x2000) ? 0x4:0)
+    | (messageObject.channel.permissionsFor(messageObject.author).has(0x2000) ? 0x4:0)
     | (messageObject.author.id == authorId ? 0x2:0)
+    | 1) & permissionOpCode[opCode]['perm'];
+  if(reactionObject)
+  p = ((reactionObject.message.channel.guild.ownerID == reactionObject.users.cache.array().pop() ? 0x8:0)
+    | (reactionObject.message.channel.permissionsFor(reactionObject.users.cache.array().pop()).has(0x2000) ? 0x4:0)
+    | (reactionObject.users.cache.has(authorId) ? 0x2:0)
     | 1) & permissionOpCode[opCode]['perm'];
   r = 0;
   for(i=0;i<4;i++){
@@ -101,16 +230,151 @@ function permissionCheckUser(opCode, messageObject, authorId) {
   }
   return (r == 1);
 }
-
-function permissionCheckBot(opCode, messageObject, functionEnable = 0xF) {  
-  return (
-    //sendMessage
-    messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(0x4800)
-    //moduleEnable
-    & ((functionEnable >> permissionOpCode[opCode]['bit']) & 1)
-    //manageMessage
-    | (messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(0x2000) ? 2 : 0)
-  );
+/*
+function permissionCheckBot2(opCode, messageObject, defaultFunctionEnable = 0xFF) {
+  let channelFunctionEnable = configDb('channelFunction')
+  .where('guildId', messageObject.guild.id)
+  .andWhere('channelId', messageObject.channel.id)
+  .select('functionEnable')
+  .then((rows) => {
+    if (rows.length > 0)
+      return rows[0]['functionEnable'];
+    else
+      return defaultFunctionEnable;
+  });
+  let guildFunctionEnable = configDb('channelFunction')
+  .where('guildId', messageObject.guild.id)
+  .select('functionEnable')
+  .then((rows) => {
+    if (rows.length > 0)
+      return rows[0]['functionEnable'];
+    else
+      return defaultFunctionEnable;
+  });
+  return Promise.all([channelFunctionEnable, guildFunctionEnable]);
+}
+*/
+function permissionCheckBot(opCode, messageObject) {
+  return readFunctionEnable(['guildFunction', 'channelFunction'], messageObject).then((functionEnableArr) => {
+    let [guildEnable , channelEnable] = functionEnableArr;
+    return ([
+      //sendMessage
+      (messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(0x4800)
+      //moduleEnable
+      & (!(permissionOpCode[opCode]['bit'] == null) ? (((guildEnable & channelEnable) >> permissionOpCode[opCode]['bit']) & 1) : 1)) == 1,
+      //manageMessage
+      messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(0x2000)
+    ]);
+  });
 }
 
-module.exports = { instructionDecode, permissionCheckUser, permissionCheckBot };
+function conditionCheck (opCode, objectCheck) {
+  switch (opCode) {
+    case 'textQuery':
+    case 'urlQuery':
+    case 'imgQuery':
+      return true;
+    case 'moduleSwitch':
+      return true;
+
+    case 'pageSwitch':
+      r = false;
+      return cacheDb('cacheMsg')
+      .where('sourceChannel', objectCheck.message.channel.id)
+      .andWhere('replyId', objectCheck.message.id)
+      .select('sourceContent', 'pageCount', 'currentPage')
+      .then((rows) => {
+        rows.forEach((entry) => {
+          if (
+            objectCheck.emoji.name == '⏭️' &&
+            entry.currentPage < entry.pageCount &&
+            entry.pageCount > 1 &&
+            objectCheck.count > 1)
+              r = true;
+          if (
+            objectCheck.emoji.name == '⏮️' &&
+            entry.currentPage > 1 &&
+            entry.pageCount > 1 &&
+            objectCheck.count > 1)
+              r = true;
+        });
+        return r;
+      });
+
+    case 'removeEmbedMsg':
+      r = false;
+      return cacheDb('cacheMsg')
+      .where('sourceChannel', objectCheck.message.channel.id)
+      .andWhere('replyId', objectCheck.message.id)
+      .select('sourceUserId')
+      .then((rows) => {
+        rows.forEach((entry) => {
+          if (
+          objectCheck.users.cache.has(entry.sourceUserId) &&
+          objectCheck.emoji.name == '🗑️'
+          )
+            r = true;
+        });
+        return r;
+      });
+
+      break;
+
+    default:
+  }
+}
+
+function writeBack(opCode, dstDb, dstTable, data, logger, messageObject = null, data2pass=null) {
+  switch (opCode) {
+    case 'textQuery':
+    case 'urlQuery':
+    case 'imgQuery':
+      dstDb(dstTable).insert([data]).then(()=>{});
+      logger.info({
+        type:'Reply',
+        sourceId: data.sourceId,
+        sourceUserId: data.sourceUserId,
+        sourceTimestamp: data.sourceTimestamp,
+        sourceContent: data.sourceContent,
+        sourceChannel: data.sourceChannel,
+        sourceGuild: data.sourceGuild,
+        replyContent: messageObject.embeds[0]
+      });
+      break;
+    case 'moduleSwitch':
+      if (data2pass.isGlobal){
+        dstDb(dstTable)
+        .where('guildId', messageObject.guild.id)
+        .update(data)
+        .then(()=>{});
+      }
+      else{
+        dstDb(dstTable)
+        .where('guildId', messageObject.guild.id)
+        .andWhere('channelId', messageObject.channel.id)
+        .update(data)
+        .then(()=>{});
+      }
+      logger.info({
+        type:'Config',
+        sourceId: messageObject.id,
+        sourceUserId: messageObject.author.id,
+        sourceTimestamp: messageObject.createdTimestamp,
+        sourceContent: messageObject.content,
+        sourceChannel: messageObject.channel.id,
+        sourceGuild: messageObject.guild.id,
+      });
+      break;
+  }
+}
+
+module.exports = {
+  instructionDecode,
+  permissionCheckUser,
+  permissionCheckBot,
+  conditionCheck,
+  writeBack,
+  reactionDecode,
+  returnBit,
+  readFunctionEnable
+};

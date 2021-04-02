@@ -16,7 +16,7 @@ async function saucenao(url){
   let $ = cheerio.load(body);
   //console.log($("*").html());
   return $("div[class='result']").length == 1 ?
-      ":x: Low similarity" : $(".result .resulttable .resulttablecontent .resultcontentcolumn").find("a").eq(0).attr("href");
+      false : $(".result .resulttable .resulttablecontent .resultcontentcolumn").find("a").eq(0).attr("href");
 
 }
 
