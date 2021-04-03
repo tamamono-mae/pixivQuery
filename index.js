@@ -129,7 +129,7 @@ client.on("message", function(srcMessage) {
             dbLog['currentPage'] = 1;
             return message;
           }).then(message => {
-            message.react('👍');
+            message.react('⭐');
             return message;
           }).then(message => {
             if (passResult.pageCount > 1)

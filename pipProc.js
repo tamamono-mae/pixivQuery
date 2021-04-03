@@ -75,11 +75,6 @@ let textInstructionSet = {
       "isGlobal": 3
     },
     "dstTable": ['guildFunction', 'channelFunction']
-  },
-  "noOperation": {
-    "patt": new RegExp(`.*`,'i'),
-    "opCode": 'noOperation',
-    "varMap": {}
   }
 };
 /*
