@@ -55,23 +55,17 @@ function permissionCheck(messageObject, permission = 8192){
   return messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(permission);
 }
 
-function pageSwitch(entry, client, messageReaction, isForward, isReactionRemove = false) {
-  q.pixivQuery(urlDump(entry.sourceContent)['data'], entry.currentPage+pageOffset(isForward)).then(result => {
-    client.channels.cache.get(messageReaction.message.channel.id).messages.fetch(messageReaction.message.id).then(message => {
-      message.edit(q.query2msg(result,urlDump(entry.sourceContent)['website']));
-    });
+function pageSwitch(entry, messageReaction, isForward) {
+  q.pixivQuery(
+    urlDump(entry.sourceContent)['data'],
+    entry.currentPage+pageOffset(isForward))
+    .then(result => {
+    messageReaction.message.edit(q.query2msg(result,urlDump(entry.sourceContent)['website']));
   });
-  cacheDb('cacheMsg').where('sourceChannel', messageReaction.message.channel.id).andWhere('replyId', messageReaction.message.id).update({
+  cacheDb('cacheMsg').where('sourceChannel', messageReaction.message.channel.id).andWhere('replyId', messageReaction.message.id)
+  .update({
     currentPage: entry.currentPage+pageOffset(isForward)
   }).then(()=>{});
-  logger.info({
-    type: isForward ? 'Next page' : 'Previous page',
-    sourceId: messageReaction.message.id,
-    sourceUserId: isReactionRemove ? 'Unknown' : messageReaction.users.cache.array().pop().id,
-    sourceTimestamp: Date.now(),
-    sourceChannel: messageReaction.message.channel.id,
-    sourceGuild: messageReaction.message.channel.guild.id,
-  });
 }
 
 client.login(config.BOT_TOKEN);
@@ -119,7 +113,7 @@ client.on("message", function(srcMessage) {
         case 'textQuery':
           dbLog['type'] = 'Reply';
           passResult = {};
-          q.pixivQuery(decodedInstruction.data.pixivID, 1).then(result => {
+          return q.pixivQuery(decodedInstruction.data.pixivID, 1).then(result => {
             if (!result) throw new Error('meta-preload-data not found!');
             passResult = result;
             return result;
@@ -130,7 +124,7 @@ client.on("message", function(srcMessage) {
             if (passResult.pageCount > 1)
               message.react('⏮️');
             dbLog['replyId'] = message.id;
-            dbLog['pageCount'] = decodedInstruction.pageCount;
+            dbLog['pageCount'] = passResult.pageCount;
             dbLog['currentPage'] = 1;
             return message;
           }).then(message => {
@@ -149,9 +143,18 @@ client.on("message", function(srcMessage) {
               cacheDb,
               decodedInstruction.dstTable[0],
               dbLog,
-              logger,
               message
             );
+            return {
+              type:'Query',
+              sourceId: dbLog.sourceId,
+              sourceUserId: dbLog.sourceUserId,
+              sourceTimestamp: dbLog.sourceTimestamp,
+              sourceContent: dbLog.sourceContent,
+              sourceChannel: dbLog.sourceChannel,
+              sourceGuild: dbLog.sourceGuild,
+              replyContent: srcMessage.embeds[0]
+            }
           })
           break;
         case 'urlQuery':
@@ -163,11 +166,12 @@ client.on("message", function(srcMessage) {
           dbLog['type'] = 'Config';
           passResult = {};
 
-          return p.readFunctionEnable(decodedInstruction['dstTable'], srcMessage).then((functionEnableArr) => {
+          return p.readFunctionEnable(decodedInstruction['dstTable'], srcMessage)
+          .then((functionEnableArr) => {
             let [guildEnable , channelEnable] = functionEnableArr;
             if (!(decodedInstruction.data.operation.match(/enable/i) == null)
              == ((((guildEnable & channelEnable) >> p.returnBit(decodedInstruction.data.botModule) & 1)) == 1))
-             throw new Error('Not need to access !');
+             throw new Error('No modification made');
             else return (decodedInstruction.data.isGlobal ?
               {
                 "table": decodedInstruction.dstTable[0],
@@ -185,16 +189,26 @@ client.on("message", function(srcMessage) {
               configDb,
               dbWrite.table,
               dbWrite.data,
-              logger,
               srcMessage,
               {"isGlobal" : dbWrite.isGlobal}
             );
+            return {
+              type:'Config',
+              sourceId: dbLog.sourceId,
+              sourceUserId: dbLog.sourceUserId,
+              sourceTimestamp: dbLog.sourceTimestamp,
+              sourceContent: dbLog.sourceContent,
+              sourceChannel: dbLog.sourceChannel,
+              sourceGuild: dbLog.sourceGuild,
+              replyContent: ""
+            }
           });
       }
+    }).then(logInfo => {
+      logger.info(logInfo);
     }).catch(e => {
       console.log(e.message);
       logger.info({
-        type:'Config',
         sourceId: srcMessage.id,
         sourceUserId: srcMessage.author.id,
         sourceTimestamp: srcMessage.createdTimestamp,
@@ -214,18 +228,95 @@ client.on('ready', () => {
 });
 
 client.on("messageReactionAdd", (messageReaction) => {
-  /*
-  Promise.all([p.conditionCheck('pageSwitch', messageReaction)]).then((result) => {
-    let [condition] = result;
-    console.log(condition);
-  })
-  */
-  /*
   p.reactionDecode(messageReaction).then((result) => {
-    console.log(result);
+    let permissionUserResult = p.permissionCheckUserReaction(
+      result['opCode'],
+      messageReaction
+    );
+    let permissionBotResult = p.permissionCheckBot(result['opCode'], messageReaction.message);
+    let conditionResult = p.conditionCheck(result['opCode'], messageReaction);
+    return Promise.all([result, permissionUserResult, permissionBotResult, conditionResult]);
+  }).then(resultAry => {
+    let [result, permissionUserResult, permissionBotResult, conditionResult] = resultAry;
+    if (
+      permissionBotResult[1] &&
+      messageReaction.count > 1 &&
+      result.opCode != 'removeEmbedMsg'
+      )
+      messageReaction.users.remove(messageReaction.users.cache.array().pop());
+    if (! (permissionUserResult & permissionBotResult[0] & conditionResult) ) {
+      if (! permissionUserResult ) throw new Error("Permission denied");
+      if (! permissionBotResult[0] ) throw new Error("Function " + result['opCode'] + " disabled");
+      if (! conditionResult ) throw null;
+    }else{
+      result['textManageable'] = permissionBotResult[1];
+      return result;
+    };
+  }).then(decodedInstruction => {
+    switch (decodedInstruction.opCode) {
+      case 'pageSwitch':
+        return cacheDb('cacheMsg')
+        .where('sourceChannel', messageReaction.message.channel.id)
+        .andWhere('replyId', messageReaction.message.id)
+        .select('sourceUserId', 'sourceContent', 'currentPage')
+        .then(rows => {
+          pageSwitch(rows[0], messageReaction, decodedInstruction.data.isNext);
+          return {
+            type: decodedInstruction.data.isNext ? 'Next page' : 'Previous page',
+            sourceId: messageReaction.message.id,
+            sourceUserId: messageReaction.users.cache.array().pop().id,
+            sourceTimestamp: Date.now(),
+            sourceChannel: messageReaction.message.channel.id,
+            sourceGuild: messageReaction.message.channel.guild.id,
+          }
+        })
+        break;
+      case 'removeEmbedMsg':
+        var sourceUserId;
+        return cacheDb('cacheMsg')
+        .where('sourceChannel', messageReaction.message.channel.id)
+        .andWhere('replyId', messageReaction.message.id)
+        .select('sourceUserId')
+        .then(rows => {
+          sourceUserId = rows[0]['sourceUserId'];
+          return messageReaction.message.delete().then(message => {
+            return message;
+          })
+        }).then(message => {
+          cacheDb('cacheMsg')
+          .where('sourceChannel', message.channel.id)
+          .andWhere('replyId', message.id)
+          .del().then(()=>{});
+          return {
+            type:'Delete',
+            sourceId: message.id,
+            sourceUserId: sourceUserId,
+            sourceTimestamp: Date.now(),
+            sourceContent: message.embeds[0],
+            sourceChannel: message.channel.id,
+            sourceGuild: message.channel.guild.id,
+          };
+        });
+        break;
+      default:
+    }
+  }).then(logInfo => {
+    logger.info(logInfo);
+  }).catch(e => {
+    if(!(e == null)) {
+      console.log(e);
+      logger.error({
+        sourceId: messageReaction.message.id,
+        sourceUserId:  messageReaction.users.cache.array().pop(),
+        sourceTimestamp: Date.now(),
+        sourceChannel: messageReaction.message.channel.id,
+        sourceGuild: messageReaction.message.guild.id,
+        error: e.message
+      });
+    }
   })
-  */
   //console.log(p.permissionCheckUser('pageSwitch', null, 0, messageReaction));
+  /*
   cacheDb('cacheMsg').where('sourceChannel', messageReaction.message.channel.id).andWhere('replyId', messageReaction.message.id).select('sourceUserId', 'sourceContent', 'pageCount', 'currentPage').then(rows => {
     rows.forEach((entry) => {
       if (messageReaction.users.cache.has(entry.sourceUserId) && messageReaction.emoji.name == '🗑️') {
@@ -243,26 +334,20 @@ client.on("messageReactionAdd", (messageReaction) => {
           sourceGuild: messageReaction.message.channel.guild.id,
         });
       };
-      if ((messageReaction.emoji.name == '⏭️' || messageReaction.emoji.name == '⏮️') && entry.pageCount > 1 && messageReaction.count > 1 && permissionCheck(messageReaction.message))
-        messageReaction.users.remove(messageReaction.users.cache.array().pop());
-      if (messageReaction.emoji.name == '⏭️' && entry.currentPage < entry.pageCount && entry.pageCount > 1 && messageReaction.count > 1) {
-        pageSwitch(entry, client, messageReaction, true);
-      }
-      if (messageReaction.emoji.name == '⏮️' && entry.currentPage > 1 && entry.pageCount > 1 && messageReaction.count > 1) {
-        pageSwitch(entry, client, messageReaction, false);
-      }
+
     });
   });
+  */
 });
 
 client.on("messageReactionRemove", (messageReaction) => {
   cacheDb('cacheMsg').where('sourceChannel', messageReaction.message.channel.id).andWhere('replyId', messageReaction.message.id).select('sourceUserId', 'sourceContent', 'pageCount', 'currentPage').then(rows => {
     rows.forEach((entry) => {
       if (messageReaction.emoji.name == '⏭️' && entry.currentPage < entry.pageCount && entry.pageCount > 1 && !permissionCheck(messageReaction.message)) {
-        pageSwitch(entry, client, messageReaction, true, true);
+        pageSwitch(entry, messageReaction, true);
       }
       if (messageReaction.emoji.name == '⏮️' && entry.currentPage > 1 && entry.pageCount > 1 && !permissionCheck(messageReaction.message)) {
-        pageSwitch(entry, client, messageReaction, false, true);
+        pageSwitch(entry, messageReaction, false);
       }
     });
   });

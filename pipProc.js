@@ -123,6 +123,10 @@ let permissionOpCode = {
   "pageSwitch": { perm: 0xF }
 }
 
+let moduleName = [
+  "textQuery", "urlQuery", "imgQuery"
+]
+
 function returnBit(botModule) {
   return permissionOpCode[botModule]['bit'];
 }
@@ -165,7 +169,7 @@ function reactionDecode(messageReaction) {
     for (i=0;i<Object.keys(reactionSet).length;i++){
       if (messageReaction.emoji.name == Object.values(reactionSet)[i]['patt']){
         data = {};
-        if(Object.values(reactionSet)[i]['varExt'])
+        if(!(Object.values(textInstructionSet)[i]['varExt'] == null))
           Object.keys(
             Object.values(reactionSet)[i]['varExt'])
             .forEach((index) => {
@@ -195,7 +199,7 @@ function instructionDecode(msg) {
             data[index] = msg.match(Object.values(textInstructionSet)[i]['patt'])[Object.values(textInstructionSet)[i]['varMap'][index]];
             }
           );
-        if(Object.values(textInstructionSet)[i]['varExt'])
+        if(!(Object.values(textInstructionSet)[i]['varExt'] == null))
           Object.keys(
             Object.values(textInstructionSet)[i]['varExt'])
             .forEach((index) => {
@@ -230,6 +234,26 @@ function permissionCheckUser(opCode, messageObject = null, authorId, reactionObj
   }
   return (r == 1);
 }
+
+function permissionCheckUserReaction(opCode, reactionObject) {
+  return cacheDb('cacheMsg')
+  .where('sourceChannel', reactionObject.message.channel.id)
+  .andWhere('replyId', reactionObject.message.id)
+  .select('sourceUserId')
+  .then((rows) => {
+    let authorId = rows[0]['sourceUserId'];
+    p = ((reactionObject.message.channel.guild.ownerID == reactionObject.users.cache.array().pop() ? 0x8:0)
+      | (reactionObject.message.channel.permissionsFor(reactionObject.users.cache.array().pop()).has(0x2000) ? 0x4:0)
+      | (reactionObject.users.cache.has(authorId) ? 0x2:0)
+      | 1) & permissionOpCode[opCode]['perm'];
+    r = 0;
+    for(i=0;i<4;i++){
+      r = ((p >> i) & 1) | r;
+    }
+    return (r == 1);
+  });
+};
+
 /*
 function permissionCheckBot2(opCode, messageObject, defaultFunctionEnable = 0xFF) {
   let channelFunctionEnable = configDb('channelFunction')
@@ -255,7 +279,8 @@ function permissionCheckBot2(opCode, messageObject, defaultFunctionEnable = 0xFF
 }
 */
 function permissionCheckBot(opCode, messageObject) {
-  return readFunctionEnable(['guildFunction', 'channelFunction'], messageObject).then((functionEnableArr) => {
+  return readFunctionEnable(['guildFunction', 'channelFunction'], messageObject)
+  .then((functionEnableArr) => {
     let [guildEnable , channelEnable] = functionEnableArr;
     return ([
       //sendMessage
@@ -275,10 +300,17 @@ function conditionCheck (opCode, objectCheck) {
     case 'imgQuery':
       return true;
     case 'moduleSwitch':
-      return true;
-
+      check = false;
+      botModule = objectCheck.content.split(" ")[1];
+      for (i=0;i<moduleName.length;i++) {
+        if (botModule.match(new RegExp(`^${moduleName[i]}`,'i')) != null){
+          check = true;
+          break;
+        }
+      }
+      return check;
     case 'pageSwitch':
-      r = false;
+      check = false;
       return cacheDb('cacheMsg')
       .where('sourceChannel', objectCheck.message.channel.id)
       .andWhere('replyId', objectCheck.message.id)
@@ -290,19 +322,20 @@ function conditionCheck (opCode, objectCheck) {
             entry.currentPage < entry.pageCount &&
             entry.pageCount > 1 &&
             objectCheck.count > 1)
-              r = true;
+              check = true;
           if (
             objectCheck.emoji.name == '⏮️' &&
             entry.currentPage > 1 &&
             entry.pageCount > 1 &&
             objectCheck.count > 1)
-              r = true;
+              check = true;
         });
-        return r;
+        return check;
       });
+      break;
 
     case 'removeEmbedMsg':
-      r = false;
+      check = false;
       return cacheDb('cacheMsg')
       .where('sourceChannel', objectCheck.message.channel.id)
       .andWhere('replyId', objectCheck.message.id)
@@ -313,9 +346,9 @@ function conditionCheck (opCode, objectCheck) {
           objectCheck.users.cache.has(entry.sourceUserId) &&
           objectCheck.emoji.name == '🗑️'
           )
-            r = true;
+            check = true;
         });
-        return r;
+        return check;
       });
 
       break;
@@ -324,12 +357,13 @@ function conditionCheck (opCode, objectCheck) {
   }
 }
 
-function writeBack(opCode, dstDb, dstTable, data, logger, messageObject = null, data2pass=null) {
+function writeBack(opCode, dstDb, dstTable, data, messageObject = null, data2pass=null) {
   switch (opCode) {
     case 'textQuery':
     case 'urlQuery':
     case 'imgQuery':
       dstDb(dstTable).insert([data]).then(()=>{});
+      /*
       logger.info({
         type:'Reply',
         sourceId: data.sourceId,
@@ -340,6 +374,7 @@ function writeBack(opCode, dstDb, dstTable, data, logger, messageObject = null, 
         sourceGuild: data.sourceGuild,
         replyContent: messageObject.embeds[0]
       });
+      */
       break;
     case 'moduleSwitch':
       if (data2pass.isGlobal){
@@ -355,6 +390,7 @@ function writeBack(opCode, dstDb, dstTable, data, logger, messageObject = null, 
         .update(data)
         .then(()=>{});
       }
+      /*
       logger.info({
         type:'Config',
         sourceId: messageObject.id,
@@ -364,6 +400,7 @@ function writeBack(opCode, dstDb, dstTable, data, logger, messageObject = null, 
         sourceChannel: messageObject.channel.id,
         sourceGuild: messageObject.guild.id,
       });
+      */
       break;
   }
 }
@@ -376,5 +413,6 @@ module.exports = {
   writeBack,
   reactionDecode,
   returnBit,
-  readFunctionEnable
+  readFunctionEnable,
+  permissionCheckUserReaction
 };
