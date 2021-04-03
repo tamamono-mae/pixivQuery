@@ -114,7 +114,7 @@ let reactionSet = {
 };
 
 let permissionOpCode = {
-  /* guildOwner txtmanager srcMessageUser member */
+  /* guildOwner txtmanager srcMessageUser isDM */
   "textQuery" : { perm: 0xF , bit: 0 },
   "urlQuery" : { perm: 0xF , bit: 1 },
   "imgQuery" : { perm: 0xF , bit: 2 },
@@ -169,7 +169,7 @@ function reactionDecode(messageReaction) {
     for (i=0;i<Object.keys(reactionSet).length;i++){
       if (messageReaction.emoji.name == Object.values(reactionSet)[i]['patt']){
         data = {};
-        if(!(Object.values(textInstructionSet)[i]['varExt'] == null))
+        if(Object.values(textInstructionSet)[i]['varExt'] != null)
           Object.keys(
             Object.values(reactionSet)[i]['varExt'])
             .forEach((index) => {
@@ -199,7 +199,7 @@ function instructionDecode(msg) {
             data[index] = msg.match(Object.values(textInstructionSet)[i]['patt'])[Object.values(textInstructionSet)[i]['varMap'][index]];
             }
           );
-        if(!(Object.values(textInstructionSet)[i]['varExt'] == null))
+        if(Object.values(textInstructionSet)[i]['varExt'] != null)
           Object.keys(
             Object.values(textInstructionSet)[i]['varExt'])
             .forEach((index) => {
@@ -286,7 +286,7 @@ function permissionCheckBot(opCode, messageObject) {
       //sendMessage
       (messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(0x4800)
       //moduleEnable
-      & (!(permissionOpCode[opCode]['bit'] == null) ? (((guildEnable & channelEnable) >> permissionOpCode[opCode]['bit']) & 1) : 1)) == 1,
+      & ((permissionOpCode[opCode]['bit'] != null) ? (((guildEnable & channelEnable) >> permissionOpCode[opCode]['bit']) & 1) : 1)) == 1,
       //manageMessage
       messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(0x2000)
     ]);

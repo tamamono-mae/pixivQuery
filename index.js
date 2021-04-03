@@ -93,7 +93,7 @@ client.on("message", function(srcMessage) {
       if (! (permissionUserResult & permissionBotResult[0] & conditionResult) ) {
         if (! permissionUserResult ) throw new Error("User permission denied");
         if (! permissionBotResult[0] ) throw new Error("Function " + result['opCode'] + " disabled");
-        if (! conditionResult ) throw new Error("Oops !");
+        if (! conditionResult ) throw null;
       }else{
         result['textManageable'] = permissionBotResult[1];
         return result;
@@ -169,7 +169,7 @@ client.on("message", function(srcMessage) {
           return p.readFunctionEnable(decodedInstruction['dstTable'], srcMessage)
           .then((functionEnableArr) => {
             let [guildEnable , channelEnable] = functionEnableArr;
-            if (!(decodedInstruction.data.operation.match(/enable/i) == null)
+            if ((decodedInstruction.data.operation.match(/enable/i) != null)
              == ((((guildEnable & channelEnable) >> p.returnBit(decodedInstruction.data.botModule) & 1)) == 1))
              throw new Error('No modification made');
             else return (decodedInstruction.data.isGlobal ?
@@ -207,16 +207,18 @@ client.on("message", function(srcMessage) {
     }).then(logInfo => {
       logger.info(logInfo);
     }).catch(e => {
-      console.log(e.message);
-      logger.info({
-        sourceId: srcMessage.id,
-        sourceUserId: srcMessage.author.id,
-        sourceTimestamp: srcMessage.createdTimestamp,
-        sourceContent: srcMessage.content,
-        sourceChannel: srcMessage.channel.id,
-        sourceGuild: srcMessage.guild.id,
-        error: e.message
-      });
+      if(e != null) {
+        console.log(e.message);
+        logger.info({
+          sourceId: srcMessage.id,
+          sourceUserId: srcMessage.author.id,
+          sourceTimestamp: srcMessage.createdTimestamp,
+          sourceContent: srcMessage.content,
+          sourceChannel: srcMessage.channel.id,
+          sourceGuild: srcMessage.guild.id,
+          error: e.message
+        });
+      }
     });
   }
 });
@@ -303,7 +305,7 @@ client.on("messageReactionAdd", (messageReaction) => {
   }).then(logInfo => {
     logger.info(logInfo);
   }).catch(e => {
-    if(!(e == null)) {
+    if(e != null) {
       console.log(e);
       logger.error({
         sourceId: messageReaction.message.id,
