@@ -235,6 +235,15 @@ function permissionCheckUser(opCode, messageObject = null, authorId, reactionObj
   return (r == 1);
 }
 
+function permissionCheckUserDM(opCode) {
+  p = 0x3 & permissionOpCode[opCode]['perm'];
+  r = 0;
+  for(i=0;i<4;i++){
+    r = ((p >> i) & 1) | r;
+  }
+  return (r == 1);
+}
+
 function permissionCheckUserReaction(opCode, reactionObject) {
   return cacheDb('cacheMsg')
   .where('sourceChannel', reactionObject.message.channel.id)
@@ -408,6 +417,7 @@ function writeBack(opCode, dstDb, dstTable, data, messageObject = null, data2pas
 module.exports = {
   instructionDecode,
   permissionCheckUser,
+  permissionCheckUserDM,
   permissionCheckBot,
   conditionCheck,
   writeBack,
