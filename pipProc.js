@@ -109,13 +109,19 @@ let reactionSet = {
 };
 
 let permissionOpCode = {
-  /* guildOwner txtmanager srcMessageUser isDM */
-  "textQuery" : { perm: 0xF , bit: 0 },
-  "urlQuery" : { perm: 0xF , bit: 1 },
-  "imgQuery" : { perm: 0xF , bit: 2 },
-  "moduleSwitch": { perm: 0xC },
-  "removeEmbedMsg": { perm: 0xE },
-  "pageSwitch": { perm: 0xF }
+  /* guildOwner txtmanager originalAuthor is_text everyone*/
+  "textQuery" : { perm: 0x1E , bit: 0 },
+  // 1 1 1 1 0
+  "urlQuery" : { perm: 0x1F , bit: 1 },
+  // 1 1 1 1 1
+  "imgQuery" : { perm: 0x1F , bit: 2 },
+  // 1 1 1 1 1
+  "moduleSwitch": { perm: 0x18 },
+  // 1 1 0 0 0
+  "removeEmbedMsg": { perm: 0x1C },
+  // 1 1 1 0 0
+  "pageSwitch": { perm: 0x1F }
+  // 1 1 1 1 1
 }
 
 let moduleName = [
@@ -126,175 +132,52 @@ function returnBit(botModule) {
   return permissionOpCode[botModule]['bit'];
 }
 
-function readFunctionEnable(dstTable, messageObject) {
-  let guildEnable = configDb(dstTable[0])
-  .where('guildId', messageObject.guild.id)
-  .then(rows => {
-    if (rows.length > 0) return rows[0]['functionEnable'];
-    else {
-      return configDb(dstTable[0]).insert([{
-        "guildId" : messageObject.guild.id,
-        "functionEnable" : functionEnableDefault
-      }]).then(()=>{
-        return functionEnableDefault;
+function writeBack(opCode, dstDb, dstTable, data, messageObject = null, data2pass=null) {
+  switch (opCode) {
+    case 'textQuery':
+    case 'urlQuery':
+    case 'imgQuery':
+      dstDb(dstTable).insert([data]).then(()=>{});
+      /*
+      logger.info({
+        type:'Reply',
+        sourceId: data.sourceId,
+        sourceUserId: data.sourceUserId,
+        sourceTimestamp: data.sourceTimestamp,
+        sourceContent: data.sourceContent,
+        sourceChannel: data.sourceChannel,
+        sourceGuild: data.sourceGuild,
+        replyContent: messageObject.embeds[0]
       });
-    }
-  });
-  let channelEnable = configDb(dstTable[1])
-  .where('guildId', messageObject.guild.id)
-  .andWhere('channelId', messageObject.channel.id)
-  .then(rows => {
-    if (rows.length > 0) return rows[0]['functionEnable'];
-    else {
-      return configDb(dstTable[1]).insert([{
-        "guildId" : messageObject.guild.id,
-        "channelId" : messageObject.channel.id,
-        "functionEnable" : functionEnableDefault
-      }]).then(()=>{
-        return functionEnableDefault;
+      */
+      break;
+    case 'moduleSwitch':
+      if (data2pass.isGlobal){
+        dstDb(dstTable)
+        .where('guildId', messageObject.guild.id)
+        .update(data)
+        .then(()=>{});
+      }
+      else{
+        dstDb(dstTable)
+        .where('guildId', messageObject.guild.id)
+        .andWhere('channelId', messageObject.channel.id)
+        .update(data)
+        .then(()=>{});
+      }
+      /*
+      logger.info({
+        type:'Config',
+        sourceId: messageObject.id,
+        sourceUserId: messageObject.author.id,
+        sourceTimestamp: messageObject.createdTimestamp,
+        sourceContent: messageObject.content,
+        sourceChannel: messageObject.channel.id,
+        sourceGuild: messageObject.guild.id,
       });
-    }
-  });
-  return Promise.all([guildEnable , channelEnable]);
-}
-
-function reactionDecode(messageReaction) {
-  return new Promise((resolve, reject) => {
-    if(!messageReaction) reject('No instruction!');
-    for (i=0;i<Object.keys(reactionSet).length;i++){
-      if (messageReaction.emoji.name == Object.values(reactionSet)[i]['patt']){
-        data = {};
-        if(Object.values(textInstructionSet)[i]['varExt'] != null)
-          Object.keys(
-            Object.values(reactionSet)[i]['varExt'])
-            .forEach((index) => {
-              data[index] = Object.values(reactionSet)[i]['varExt'][index];
-            }
-          );
-        resolve({
-          "opCode": Object.values(reactionSet)[i]['opCode'],
-          "data": data,
-          "dstTable": Object.values(reactionSet)[i]['dstTable']
-        });
-        break;
-      }
-    }
-  });
-}
-
-function instructionDecode(msg) {
-  return new Promise((resolve, reject) => {
-    if(!msg) reject('No instruction!');
-    for (i=0;i<Object.keys(textInstructionSet).length;i++){
-      if (msg.match(Object.values(textInstructionSet)[i]['patt'])){
-        data = {};
-        Object.keys(
-          Object.values(textInstructionSet)[i]['varMap']).forEach((index) => {
-          //data[index] = msg.match(Object.values(textInstructionSet)[i]['patt'])[Object.values(textInstructionSet)[i]['varMap'][index]];
-            data[index] = msg.match(Object.values(textInstructionSet)[i]['patt'])[Object.values(textInstructionSet)[i]['varMap'][index]];
-            }
-          );
-        if(Object.values(textInstructionSet)[i]['varExt'] != null)
-          Object.keys(
-            Object.values(textInstructionSet)[i]['varExt'])
-            .forEach((index) => {
-              data[index] = Object.values(textInstructionSet)[i]['varExt'][index];
-            }
-          );
-        resolve({
-          "opCode": Object.values(textInstructionSet)[i]['opCode'],
-          "data": data,
-          "dstTable": Object.values(textInstructionSet)[i]['dstTable']
-        });
-        break;
-      }
-    }
-  });
-}
-
-function permissionCheckUser(opCode, messageObject = null, authorId, reactionObject = null) {
-  if(messageObject)
-  p = ((messageObject.channel.guild.ownerID == messageObject.author.id ? 0x8:0)
-    | (messageObject.channel.permissionsFor(messageObject.author).has(0x2000) ? 0x4:0)
-    | (messageObject.author.id == authorId ? 0x2:0)
-    | 1) & permissionOpCode[opCode]['perm'];
-  if(reactionObject)
-  p = ((reactionObject.message.channel.guild.ownerID == reactionObject.users.cache.array().pop() ? 0x8:0)
-    | (reactionObject.message.channel.permissionsFor(reactionObject.users.cache.array().pop()).has(0x2000) ? 0x4:0)
-    | (reactionObject.users.cache.has(authorId) ? 0x2:0)
-    | 1) & permissionOpCode[opCode]['perm'];
-  r = 0;
-  for(i=0;i<4;i++){
-    r = ((p >> i) & 1) | r;
+      */
+      break;
   }
-  return (r == 1);
-}
-
-function permissionCheckUserDM(opCode) {
-  p = 0x3 & permissionOpCode[opCode]['perm'];
-  r = 0;
-  for(i=0;i<4;i++){
-    r = ((p >> i) & 1) | r;
-  }
-  return (r == 1);
-}
-
-function permissionCheckUserReaction(opCode, reactionObject) {
-  return cacheDb('cacheMsg')
-  .where('sourceChannel', reactionObject.message.channel.id)
-  .andWhere('replyId', reactionObject.message.id)
-  .select('sourceUserId')
-  .then((rows) => {
-    let authorId = rows[0]['sourceUserId'];
-    p = ((reactionObject.message.channel.guild.ownerID == reactionObject.users.cache.array().pop() ? 0x8:0)
-      | (reactionObject.message.channel.permissionsFor(reactionObject.users.cache.array().pop()).has(0x2000) ? 0x4:0)
-      | (reactionObject.users.cache.has(authorId) ? 0x2:0)
-      | 1) & permissionOpCode[opCode]['perm'];
-    r = 0;
-    for(i=0;i<4;i++){
-      r = ((p >> i) & 1) | r;
-    }
-    return (r == 1);
-  });
-};
-
-/*
-function permissionCheckBot2(opCode, messageObject, defaultFunctionEnable = 0xFF) {
-  let channelFunctionEnable = configDb('channelFunction')
-  .where('guildId', messageObject.guild.id)
-  .andWhere('channelId', messageObject.channel.id)
-  .select('functionEnable')
-  .then((rows) => {
-    if (rows.length > 0)
-      return rows[0]['functionEnable'];
-    else
-      return defaultFunctionEnable;
-  });
-  let guildFunctionEnable = configDb('channelFunction')
-  .where('guildId', messageObject.guild.id)
-  .select('functionEnable')
-  .then((rows) => {
-    if (rows.length > 0)
-      return rows[0]['functionEnable'];
-    else
-      return defaultFunctionEnable;
-  });
-  return Promise.all([channelFunctionEnable, guildFunctionEnable]);
-}
-*/
-function permissionCheckBot(opCode, messageObject) {
-  return readFunctionEnable(['guildFunction', 'channelFunction'], messageObject)
-  .then((functionEnableArr) => {
-    let [guildEnable , channelEnable] = functionEnableArr;
-    return ([
-      //sendMessage
-      (messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(0x4800)
-      //moduleEnable
-      & ((permissionOpCode[opCode]['bit'] != null) ? (((guildEnable & channelEnable) >> permissionOpCode[opCode]['bit']) & 1) : 1)) == 1,
-      //manageMessage
-      messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(0x2000)
-    ]);
-  });
 }
 
 function conditionCheck (opCode, objectCheck) {
@@ -361,63 +244,192 @@ function conditionCheck (opCode, objectCheck) {
   }
 }
 
-function writeBack(opCode, dstDb, dstTable, data, messageObject = null, data2pass=null) {
-  switch (opCode) {
-    case 'textQuery':
-    case 'urlQuery':
-    case 'imgQuery':
-      dstDb(dstTable).insert([data]).then(()=>{});
-      /*
-      logger.info({
-        type:'Reply',
-        sourceId: data.sourceId,
-        sourceUserId: data.sourceUserId,
-        sourceTimestamp: data.sourceTimestamp,
-        sourceContent: data.sourceContent,
-        sourceChannel: data.sourceChannel,
-        sourceGuild: data.sourceGuild,
-        replyContent: messageObject.embeds[0]
+function readFunctionEnable(dstTable, messageObject, is_ro = false) {
+  let guildEnable = configDb(dstTable[0])
+  .where('guildId', messageObject.guild.id)
+  .then(rows => {
+    if (rows.length > 0) return rows[0]['functionEnable'];
+    else if (is_ro){
+      return functionEnableDefault;
+    }
+    else {
+      return configDb(dstTable[0]).insert([{
+        "guildId" : messageObject.guild.id,
+        "functionEnable" : functionEnableDefault
+      }]).then(()=>{
+        return functionEnableDefault;
       });
-      */
-      break;
-    case 'moduleSwitch':
-      if (data2pass.isGlobal){
-        dstDb(dstTable)
-        .where('guildId', messageObject.guild.id)
-        .update(data)
-        .then(()=>{});
-      }
-      else{
-        dstDb(dstTable)
-        .where('guildId', messageObject.guild.id)
-        .andWhere('channelId', messageObject.channel.id)
-        .update(data)
-        .then(()=>{});
-      }
-      /*
-      logger.info({
-        type:'Config',
-        sourceId: messageObject.id,
-        sourceUserId: messageObject.author.id,
-        sourceTimestamp: messageObject.createdTimestamp,
-        sourceContent: messageObject.content,
-        sourceChannel: messageObject.channel.id,
-        sourceGuild: messageObject.guild.id,
+    }
+  });
+  let channelEnable = configDb(dstTable[1])
+  .where('guildId', messageObject.guild.id)
+  .andWhere('channelId', messageObject.channel.id)
+  .then(rows => {
+    if (rows.length > 0) return rows[0]['functionEnable'];
+    else if (is_ro){
+      return functionEnableDefault;
+    }
+    else {
+      return configDb(dstTable[1]).insert([{
+        "guildId" : messageObject.guild.id,
+        "channelId" : messageObject.channel.id,
+        "functionEnable" : functionEnableDefault
+      }]).then(()=>{
+        return functionEnableDefault;
       });
-      */
-      break;
-  }
+    }
+  });
+  return Promise.all([guildEnable , channelEnable]);
 }
 
+function permissionCheckBot(opCode, messageObject) {
+  return readFunctionEnable(['guildFunction', 'channelFunction'], messageObject, true)
+  .then((functionEnableArr) => {
+    let [guildEnable , channelEnable] = functionEnableArr;
+    return ([
+      //sendMessage
+      (messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(0x4800)
+      //moduleEnable
+      & ((permissionOpCode[opCode]['bit'] != null) ? (((guildEnable & channelEnable) >> permissionOpCode[opCode]['bit']) & 1) : 1)) == 1,
+      //manageMessage
+      messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(0x2000)
+    ]);
+  });
+}
+
+function permissionCheckUserReaction(opCode, reactionObject) {
+  return cacheDb('cacheMsg')
+  .where('sourceChannel', reactionObject.message.channel.id)
+  .andWhere('replyId', reactionObject.message.id)
+  .select('sourceUserId')
+  .then((rows) => {
+    let authorId = rows[0]['sourceUserId'];
+    p = ((reactionObject.message.channel.guild.ownerID == reactionObject.users.cache.array().pop() ? 0x10:0)
+      | (reactionObject.message.channel.permissionsFor(reactionObject.users.cache.array().pop()).has(0x2000) ? 0x8:0)
+      | (reactionObject.users.cache.has(authorId) ? 0x4:0)
+      | 0x3) & permissionOpCode[opCode]['perm'];
+    r = 0;
+    for(i=0;i<4;i++){
+      r = ((p >> i) & 1) | r;
+    }
+    return (r == 1);
+  });
+};
+
+function permissionCheckUserDM(opCode, isReaction = false) {
+  p = 0x1 & permissionOpCode[opCode]['perm'];
+  r = 0;
+  for(i=0;i<4;i++){
+    r = ((p >> i) & 1) | r;
+  }
+  return (r == 1);
+}
+
+function permissionCheckUser(opCode, messageObject = null, authorId, reactionObject = null) {
+  if(messageObject)
+  p = ((messageObject.channel.guild.ownerID == messageObject.author.id ? 0x10:0)
+    | (messageObject.channel.permissionsFor(messageObject.author).has(0x2000) ? 0x8:0)
+    | (messageObject.author.id == authorId ? 0x4:0)
+    | 0x3) & permissionOpCode[opCode]['perm'];
+  if(reactionObject)
+  p = ((reactionObject.message.channel.guild.ownerID == reactionObject.users.cache.array().pop() ? 0x10:0)
+    | (reactionObject.message.channel.permissionsFor(reactionObject.users.cache.array().pop()).has(0x2000) ? 0x8:0)
+    | (reactionObject.users.cache.has(authorId) ? 0x4:0)
+    | 0x3) & permissionOpCode[opCode]['perm'];
+  r = 0;
+  for(i=0;i<4;i++){
+    r = ((p >> i) & 1) | r;
+  }
+  return (r == 1);
+}
+
+function reactionDecode(messageReaction) {
+  return new Promise((resolve, reject) => {
+    if(!messageReaction) reject('No instruction!');
+    for (i=0;i<Object.keys(reactionSet).length;i++){
+      if (messageReaction.emoji.name == Object.values(reactionSet)[i]['patt']){
+        data = {};
+        if(Object.values(textInstructionSet)[i]['varExt'] != null)
+          Object.keys(
+            Object.values(reactionSet)[i]['varExt'])
+            .forEach((index) => {
+              data[index] = Object.values(reactionSet)[i]['varExt'][index];
+            }
+          );
+        resolve({
+          "opCode": Object.values(reactionSet)[i]['opCode'],
+          "data": data,
+          "dstTable": Object.values(reactionSet)[i]['dstTable']
+        });
+        break;
+      }
+    }
+  });
+}
+
+function instructionDecode(msg) {
+  return new Promise((resolve, reject) => {
+    if(!msg) reject('No instruction!');
+    for (i=0;i<Object.keys(textInstructionSet).length;i++){
+      if (msg.match(Object.values(textInstructionSet)[i]['patt'])){
+        data = {};
+        Object.keys(
+          Object.values(textInstructionSet)[i]['varMap']).forEach((index) => {
+          //data[index] = msg.match(Object.values(textInstructionSet)[i]['patt'])[Object.values(textInstructionSet)[i]['varMap'][index]];
+            data[index] = msg.match(Object.values(textInstructionSet)[i]['patt'])[Object.values(textInstructionSet)[i]['varMap'][index]];
+            }
+          );
+        if(Object.values(textInstructionSet)[i]['varExt'] != null)
+          Object.keys(
+            Object.values(textInstructionSet)[i]['varExt'])
+            .forEach((index) => {
+              data[index] = Object.values(textInstructionSet)[i]['varExt'][index];
+            }
+          );
+        resolve({
+          "opCode": Object.values(textInstructionSet)[i]['opCode'],
+          "data": data,
+          "dstTable": Object.values(textInstructionSet)[i]['dstTable']
+        });
+        break;
+      }
+    }
+  });
+}
+/*
+function permissionCheckBot2(opCode, messageObject, defaultFunctionEnable = 0xFF) {
+  let channelFunctionEnable = configDb('channelFunction')
+  .where('guildId', messageObject.guild.id)
+  .andWhere('channelId', messageObject.channel.id)
+  .select('functionEnable')
+  .then((rows) => {
+    if (rows.length > 0)
+      return rows[0]['functionEnable'];
+    else
+      return defaultFunctionEnable;
+  });
+  let guildFunctionEnable = configDb('channelFunction')
+  .where('guildId', messageObject.guild.id)
+  .select('functionEnable')
+  .then((rows) => {
+    if (rows.length > 0)
+      return rows[0]['functionEnable'];
+    else
+      return defaultFunctionEnable;
+  });
+  return Promise.all([channelFunctionEnable, guildFunctionEnable]);
+}
+*/
+
 module.exports = {
-  instructionDecode,
-  permissionCheckUser,
-  permissionCheckUserDM,
-  permissionCheckBot,
-  conditionCheck,
-  writeBack,
-  reactionDecode,
   returnBit,
+  writeBack,
+  conditionCheck,
   readFunctionEnable,
-  permissionCheckUserReaction
+  permissionCheckBot,
+  permissionCheckUserDM,
+  permissionCheckUserReaction,
+  permissionCheckUser,
+  reactionDecode,
+  instructionDecode
 };

@@ -75,16 +75,17 @@ client.on("message", function(srcMessage) {
   //console.log(permissionCheck(srcMessage) ? 4096:0);
   //console.log(srcMessage.author.id);
   var is_dm = srcMessage.channel.type == 'dm';
+  var isText = srcMessage.channel.type == 'text';
   //if (srcMessage.author.bot || !permissionCheck(srcMessage, 85056)) return;
-  if (srcMessage.author.bot) return;
+  if (srcMessage.author.bot || !(is_dm || isText)) return;
   //if (!message.content.startsWith(config.prefix) && !is_dm) return;
   //var msgbody = (is_dm) ? message.content : message.content.slice(config.prefix.length);
   if (srcMessage.content) {
     p.instructionDecode(srcMessage.content).then((result) => {
-      let permissionUserResult = (!is_dm) ?
-        p.permissionCheckUser(result['opCode'], srcMessage, srcMessage.author.id) :
+      let permissionUserResult = (isText) ?
+        p.permissionCheckUser(result['opCode'], srcMessage, '0') :
         p.permissionCheckUserDM(result['opCode']);
-      let permissionBotResult = (!is_dm) ?
+      let permissionBotResult = (isText) ?
         p.permissionCheckBot(result['opCode'], srcMessage, 0xFF) :
         [true , false];
       let conditionResult = p.conditionCheck(result['opCode'], srcMessage);
@@ -210,15 +211,17 @@ client.on("message", function(srcMessage) {
     }).catch(e => {
       if(e != null) {
         console.log(e);
-        logger.info({
+        logInfo = {
           sourceId: srcMessage.id,
           sourceUserId: srcMessage.author.id,
           sourceTimestamp: srcMessage.createdTimestamp,
           sourceContent: srcMessage.content,
           sourceChannel: srcMessage.channel.id,
-          sourceGuild: srcMessage.guild.id,
           error: e.message
-        });
+        }
+        if (isText)
+          logInfo['sourceGuild'] = srcMessage.guild.id;
+        logger.info(logInfo);
       }
     });
   }
@@ -232,11 +235,12 @@ client.on('ready', () => {
 
 client.on("messageReactionAdd", (messageReaction) => {
   var is_dm = messageReaction.message.channel.type == 'dm';
+  var isText = messageReaction.message.channel.type == 'text';
   p.reactionDecode(messageReaction).then((result) => {
-    let permissionUserResult = (!is_dm) ?
+    let permissionUserResult = (isText) ?
       p.permissionCheckUserReaction(result['opCode'], messageReaction) :
-      p.permissionCheckUserDM(result['opCode']);
-    let permissionBotResult = (!is_dm) ?
+      p.permissionCheckUserDM(result['opCode'], true);
+    let permissionBotResult = (isText) ?
       p.permissionCheckBot(result['opCode'], messageReaction.message) :
       [true , false];
     let conditionResult = p.conditionCheck(result['opCode'], messageReaction);
@@ -273,7 +277,7 @@ client.on("messageReactionAdd", (messageReaction) => {
             sourceTimestamp: Date.now(),
             sourceChannel: messageReaction.message.channel.id
           };
-          if (!is_dm)
+          if (isText)
             logInfo['sourceGuild'] = messageReaction.message.channel.guild.id;
           return logInfo;
         })
@@ -302,7 +306,7 @@ client.on("messageReactionAdd", (messageReaction) => {
             sourceContent: message.embeds[0],
             sourceChannel: message.channel.id
           };
-          if (!is_dm)
+          if (isText)
             logInfo['sourceGuild'] = message.channel.guild.id;
           return logInfo;
         });
@@ -321,7 +325,7 @@ client.on("messageReactionAdd", (messageReaction) => {
         sourceChannel: messageReaction.message.channel.id,
         error: e.message
       };
-      if (!is_dm)
+      if (isText)
         logInfo['sourceGuild'] = messageReaction.message.guild.id;
       logger.error(logInfo);
     }
