@@ -112,7 +112,7 @@ client.on("message", function(srcMessage) {
       if (srcMessage.guild != null) dbLog['sourceGuild'] = srcMessage.guild.id;
 
       switch (decodedInstruction.opCode) {
-        case 'textQuery':
+        case 'getImageInfos':
           dbLog['type'] = 'Reply';
           passResult = {};
           return q.pixivQuery(decodedInstruction.data.pixivID, 1).then(result => {
@@ -228,6 +228,29 @@ client.on("message", function(srcMessage) {
 });
 
 client.on('ready', () => {
+  /*
+  cacheDb('cacheMsg').select('sourceChannel').then(rows => {
+    var channels = [];
+    $.each(rows, function(i, el){
+      if($.inArray(el['sourceChannel'], channels) === -1)
+        channels.push(el['sourceChannel']);
+    });
+    channels.forEach(channel =>{
+      var ch = client.channels.cache.get(channel);
+      client.channels.fetch(channel);
+      cacheDb('cacheMsg').where('sourceChannel', channel).select('sourceId').then(rows => {
+        var messages = [];
+        $.each(rows, function(i, el){
+          if($.inArray(el['sourceId'], messages) === -1)
+            messages.push(el['sourceId']);
+        });
+        messages.forEach(message =>
+          ch.messages.fetch(message)
+        );
+      })
+    });
+  })
+  */
   setInterval(( () => {
     cacheDb('cacheMsg').where('sourceTimestamp', '<', Date.now()-86400000).del().then(()=>{});
   } ), 600000);
@@ -287,9 +310,12 @@ client.on("messageReactionAdd", (messageReaction) => {
         return cacheDb('cacheMsg')
         .where('sourceChannel', messageReaction.message.channel.id)
         .andWhere('replyId', messageReaction.message.id)
-        .select('sourceUserId')
+        .select('sourceId', 'sourceChannel', 'sourceUserId')
         .then(rows => {
           sourceUserId = rows[0]['sourceUserId'];
+          client.channels.cache.get(rows[0]['sourceChannel'])
+          .messages.cache.get(rows[0]['sourceId'])
+          .suppressEmbeds(false);
           return messageReaction.message.delete().then(message => {
             return message;
           })

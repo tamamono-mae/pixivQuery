@@ -38,7 +38,7 @@ const configDb = require('knex')({
 let textInstructionSet = {
   "pixiv" : {
     "patt": /^.*\.pixiv\..*\/(\d+)/i ,
-    "opCode": "textQuery",
+    "opCode": "getImageInfos",
     "varMap": {
       "pixivID": 1
     },
@@ -49,7 +49,7 @@ let textInstructionSet = {
   },
   "pixivE": {
     "patt": /^.*\.pixiv\..*member_illust\.php.*illust_id=(\d+)/i ,
-    "opCode": "textQuery",
+    "opCode": "getImageInfos",
     "varMap": {
       "pixivID": 1
     },
@@ -110,7 +110,7 @@ let reactionSet = {
 
 let permissionOpCode = {
   /* guildOwner txtmanager originalAuthor is_text everyone*/
-  "textQuery" : { perm: 0x1E , bit: 0 },
+  "getImageInfos" : { perm: 0x1E , bit: 0 },
   // 1 1 1 1 0
   "urlQuery" : { perm: 0x1F , bit: 1 },
   // 1 1 1 1 1
@@ -125,7 +125,7 @@ let permissionOpCode = {
 }
 
 let moduleName = [
-  "textQuery", "urlQuery", "imgQuery"
+  "getImageInfos", "urlQuery", "imgQuery"
 ]
 
 function returnBit(botModule) {
@@ -134,7 +134,7 @@ function returnBit(botModule) {
 
 function writeBack(opCode, dstDb, dstTable, data, messageObject = null, data2pass=null) {
   switch (opCode) {
-    case 'textQuery':
+    case 'getImageInfos':
     case 'urlQuery':
     case 'imgQuery':
       dstDb(dstTable).insert([data]).then(()=>{});
@@ -182,7 +182,7 @@ function writeBack(opCode, dstDb, dstTable, data, messageObject = null, data2pas
 
 function conditionCheck (opCode, objectCheck) {
   switch (opCode) {
-    case 'textQuery':
+    case 'getImageInfos':
     case 'urlQuery':
     case 'imgQuery':
       return true;
