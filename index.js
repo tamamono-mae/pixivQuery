@@ -4,6 +4,7 @@ const winston = require('winston');
 const config = require("../token/config3.json");
 const p = require("./pipProc.js");
 const q = require("./query.js");
+const a = require("./app.js");
 const cacheDb = require('knex')({
   client: 'sqlite3',
   connection: {
@@ -80,7 +81,80 @@ client.on("message", function(srcMessage) {
   if (srcMessage.author.bot || !(is_dm || isText)) return;
   //if (!message.content.startsWith(config.prefix) && !is_dm) return;
   //var msgbody = (is_dm) ? message.content : message.content.slice(config.prefix.length);
-  if (srcMessage.content) {
+  if (srcMessage.attachments.array().length == 1) {
+    let result = {
+      "opCode": 'imgQuery',
+      "varMap": {},
+      "data": {
+        "url": srcMessage.attachments.array()[0]['attachment']
+      },
+      "dstTable": ['cacheMsg']
+    }; //result = decodedInstruction
+    let permissionUserResult = (isText) ?
+      p.permissionCheckUser(result['opCode'], srcMessage, '0') :
+      p.permissionCheckUserDM(result['opCode']);
+    let permissionBotResult = (isText) ?
+      p.permissionCheckBot(result['opCode'], srcMessage, 0xFF) :
+      [true , false];
+    let conditionResult = p.conditionCheck(result['opCode'], srcMessage);
+    Promise.all([result, permissionUserResult, permissionBotResult, conditionResult])
+    .then(resultAry => {
+      let [result, permissionUserResult, permissionBotResult, conditionResult] = resultAry;
+
+      if (! (permissionUserResult & permissionBotResult[0] & conditionResult) ) {
+        if (! permissionUserResult ) throw new Error("User permission denied");
+        if (! permissionBotResult[0] ) throw new Error("Function " + result['opCode'] + " disabled");
+        if (! conditionResult ) throw null;
+      }else{
+        result['textManageable'] = permissionBotResult[1];
+        return result;
+      };
+    }).then((decodedInstruction) => {
+      var dbLog = {
+        time: Date.now(),
+        sourceId: srcMessage.id,
+        sourceUserId: srcMessage.author.id,
+        sourceTimestamp: srcMessage.createdTimestamp,
+        sourceContent: srcMessage.content,
+        sourceChannel: srcMessage.channel.id,
+        type: 'Image Search'
+      };
+      if (srcMessage.guild != null) dbLog['sourceGuild'] = srcMessage.guild.id;
+      return a.urlSearch(decodedInstruction, srcMessage, dbLog, cacheDb)
+      .then(result => {
+        p.writeBack(
+          decodedInstruction.opCode,
+          cacheDb,
+          decodedInstruction.dstTable[0],
+          result.dbLog,
+          srcMessage
+        );
+        result.logger.type = 'Image Search';
+        if (decodedInstruction.textManageable)
+          client.channels.cache.get(dbLog.sourceChannel)
+          .messages.cache.get(dbLog.sourceId).delete();
+        return result.logger;
+      })
+    }).then(logInfo => {
+      logger.info(logInfo);
+    }).catch(e => {
+      if(e != null) {
+        console.log(e);
+        logInfo = {
+          sourceId: srcMessage.id,
+          sourceUserId: srcMessage.author.id,
+          sourceTimestamp: srcMessage.createdTimestamp,
+          sourceContent: srcMessage.content,
+          sourceChannel: srcMessage.channel.id,
+          error: e.message
+        }
+        if (isText)
+          logInfo['sourceGuild'] = srcMessage.guild.id;
+        logger.info(logInfo);
+      }
+    });
+  }
+  else if (srcMessage.content != null) {
     p.instructionDecode(srcMessage.content).then((result) => {
       let permissionUserResult = (isText) ?
         p.permissionCheckUser(result['opCode'], srcMessage, '0') :
@@ -114,7 +188,20 @@ client.on("message", function(srcMessage) {
       switch (decodedInstruction.opCode) {
         case 'getImageInfos':
           dbLog['type'] = 'Reply';
-          passResult = {};
+          return a.getImageInfos(
+            decodedInstruction, srcMessage, dbLog, cacheDb
+          )
+          .then(result => {
+            p.writeBack(
+              decodedInstruction.opCode,
+              cacheDb,
+              decodedInstruction.dstTable[0],
+              result.dbLog,
+              srcMessage
+            );
+            return result.logger;
+          });
+          /*
           return q.pixivQuery(decodedInstruction.data.pixivID, 1).then(result => {
             if (!result) throw new Error('meta-preload-data not found!');
             passResult = result;
@@ -158,16 +245,30 @@ client.on("message", function(srcMessage) {
               replyContent: srcMessage.embeds[0]
             }
           })
+          */
           break;
-        case 'urlQuery':
-          dbLog['type'] = 'Reply';
-          passResult = {};
+        case 'urlSearch':
+          dbLog['type'] = 'URL Search';
+          a.urlSearch(decodedInstruction, srcMessage, dbLog, cacheDb)
+          .then(result => {
+            p.writeBack(
+              decodedInstruction.opCode,
+              cacheDb,
+              decodedInstruction.dstTable[0],
+              result.dbLog,
+              srcMessage
+            );
+            if (decodedInstruction.textManageable)
+              client.channels.cache.get(dbLog.sourceChannel)
+              .messages.cache.get(dbLog.sourceId).delete();
+            //result['logger']['type'] = 'URL Search';
+            return result.logger;
+          })
 
           break;
         case 'moduleSwitch':
           dbLog['type'] = 'Config';
           passResult = {};
-
           return p.readFunctionEnable(decodedInstruction['dstTable'], srcMessage)
           .then((functionEnableArr) => {
             let [guildEnable , channelEnable] = functionEnableArr;
@@ -313,9 +414,10 @@ client.on("messageReactionAdd", (messageReaction) => {
         .select('sourceId', 'sourceChannel', 'sourceUserId')
         .then(rows => {
           sourceUserId = rows[0]['sourceUserId'];
-          client.channels.cache.get(rows[0]['sourceChannel'])
-          .messages.cache.get(rows[0]['sourceId'])
-          .suppressEmbeds(false);
+          let srcmsg = client.channels.cache.get(rows[0]['sourceChannel'])
+          .messages.cache.get(rows[0]['sourceId']);
+          if (srcmsg != null)
+            srcmsg.suppressEmbeds(false);
           return messageReaction.message.delete().then(message => {
             return message;
           })

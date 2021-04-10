@@ -2,22 +2,51 @@ const fetch = require("node-fetch");
 const cheerio = require("cheerio");
 const formData = require("form-data");
 const { htmlToText } = require('html-to-text');
+const similarity_threshold = 93;
 
-async function saucenao(url){
+async function checkUrls(urlArr) {
+  for(var i=0;i<urlArr.length;i++) {
+    let http_status = await fetch(urlArr[i])
+    .then(res => {return res.status;});
+    if (http_status == 200) return urlArr[i];
+  }
+  return null;
+}
+
+function saucenaoSearch(url){
   var formdata = mkfd(url);
-  let body = await fetch('https://saucenao.com/search.php',
+  return fetch('https://saucenao.com/search.php',
   {
     method: 'POST',
     headers: formdata.getHeaders(),
     body: formdata,
     redirect: 'follow'
   })
-  .then(res => res.text());
-  let $ = cheerio.load(body);
-  //console.log($("*").html());
-  return $("div[class='result']").length == 1 ?
-      false : $(".result .resulttable .resulttablecontent .resultcontentcolumn").find("a").eq(0).attr("href");
-
+  .then(res => res.text())
+  .then(body => {
+    let $ = cheerio.load(body);
+    //return $(".result .resulttable .resulttablecontent").length;
+    var tables = [];
+    var results = [];
+    if ($(".result .resulttable .resulttablecontent").length == 0) return [];
+    for(var i=0;i<$(".result .resulttable .resulttablecontent").length;i++){
+      tables.push($(".result .resulttable .resulttablecontent").eq(i));
+    };
+    if (tables.length == 0) return [];
+    for(var i=0;i<tables.length;i++){
+      var c = cheerio.load(tables[i].html());
+      if (
+        (parseInt(c(".resultsimilarityinfo").text()) >= similarity_threshold) &&
+        c(".resultcontentcolumn").find("a").eq(0).attr("href") != null
+      ){
+        results.push(c(".resultcontentcolumn").find("a").eq(0).attr("href"));
+      }
+    }
+    return results;
+  })
+  .then(results => {
+    return (results.length > 0) ? checkUrls(results) : null ;
+  })
 }
 
 async function ascii2d(url){
@@ -86,7 +115,7 @@ function query2msg(data,type){
           "color": data['xRestrict'] == 0 ? 4036607 : 13859410,
           "fields": [
             {
-              "name": "作者 Pixiv",
+              "name": "Author",
               "value": "["+data['name']+"](https://www.pixiv.net/users/"+data['userId']+")",
                 "inline": true
               },
@@ -116,4 +145,4 @@ function query2msg(data,type){
   }
 }
 
-module.exports = { saucenao, ascii2d, mkfd, pixivQuery, query2msg };
+module.exports = { saucenaoSearch, ascii2d, mkfd, pixivQuery, query2msg };

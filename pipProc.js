@@ -58,9 +58,9 @@ let textInstructionSet = {
     },
     "dstTable": ['cacheMsg']
   },
-  "urlQuery": {
+  "urlSearch": {
     "patt": /^(https|http):\/\/(.+)(.jpg|.png)/i ,
-    "opCode": "urlQuery",
+    "opCode": "urlSearch",
     "varMap": {
       "url": 0
     },
@@ -75,7 +75,12 @@ let textInstructionSet = {
       "isGlobal": 3
     },
     "dstTable": ['guildFunction', 'channelFunction']
+  },
+  /*
+  "setReaction": {
+
   }
+  */
 };
 /*
 網址自動查圖
@@ -112,7 +117,7 @@ let permissionOpCode = {
   /* guildOwner txtmanager originalAuthor is_text everyone*/
   "getImageInfos" : { perm: 0x1E , bit: 0 },
   // 1 1 1 1 0
-  "urlQuery" : { perm: 0x1F , bit: 1 },
+  "urlSearch" : { perm: 0x1F , bit: 1 },
   // 1 1 1 1 1
   "imgQuery" : { perm: 0x1F , bit: 2 },
   // 1 1 1 1 1
@@ -125,7 +130,7 @@ let permissionOpCode = {
 }
 
 let moduleName = [
-  "getImageInfos", "urlQuery", "imgQuery"
+  "getImageInfos", "urlSearch", "imgQuery"
 ]
 
 function returnBit(botModule) {
@@ -135,7 +140,7 @@ function returnBit(botModule) {
 function writeBack(opCode, dstDb, dstTable, data, messageObject = null, data2pass=null) {
   switch (opCode) {
     case 'getImageInfos':
-    case 'urlQuery':
+    case 'urlSearch':
     case 'imgQuery':
       dstDb(dstTable).insert([data]).then(()=>{});
       /*
@@ -183,9 +188,11 @@ function writeBack(opCode, dstDb, dstTable, data, messageObject = null, data2pas
 function conditionCheck (opCode, objectCheck) {
   switch (opCode) {
     case 'getImageInfos':
-    case 'urlQuery':
-    case 'imgQuery':
+    case 'urlSearch':
       return true;
+    case 'imgQuery':
+      return objectCheck.attachments.array()[0]['attachment']
+      .match(textInstructionSet.urlSearch.patt) != null;
     case 'moduleSwitch':
       check = false;
       botModule = objectCheck.content.split(" ")[1];
@@ -326,12 +333,12 @@ function permissionCheckUserDM(opCode, isReaction = false) {
 }
 
 function permissionCheckUser(opCode, messageObject = null, authorId, reactionObject = null) {
-  if(messageObject)
+  if(messageObject != null)
   p = ((messageObject.channel.guild.ownerID == messageObject.author.id ? 0x10:0)
     | (messageObject.channel.permissionsFor(messageObject.author).has(0x2000) ? 0x8:0)
     | (messageObject.author.id == authorId ? 0x4:0)
     | 0x3) & permissionOpCode[opCode]['perm'];
-  if(reactionObject)
+  if(reactionObject != null)
   p = ((reactionObject.message.channel.guild.ownerID == reactionObject.users.cache.array().pop() ? 0x10:0)
     | (reactionObject.message.channel.permissionsFor(reactionObject.users.cache.array().pop()).has(0x2000) ? 0x8:0)
     | (reactionObject.users.cache.has(authorId) ? 0x4:0)
