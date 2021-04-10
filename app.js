@@ -17,12 +17,13 @@ const configDb = require('knex')({
 
 function getImageInfos(decodedInstruction, srcMessage, dbLog, cacheDb) {
   var passResult = {};
-  //let channelReaction = p.readReaction(decodedInstruction['dstTable'], srcMessage, true);
-  //let queryResult = q.pixivQuery(decodedInstruction.data.pixivID, 1);
-  return q.pixivQuery(decodedInstruction.data.pixivID, 1).then(result => {
-    if (result == null) throw new Error('meta-preload-data not found!');
-    passResult = result;
-    return result;
+  var reaction = {};
+  let channelReaction = p.readReaction(['channelFunction'], srcMessage, true);
+  let queryResult = q.pixivQuery(decodedInstruction.data.pixivID, 1);
+  return Promise.all([channelReaction, queryResult]).then(resultAry => {
+    [reaction, passResult] = resultAry;
+    if (passResult == null) throw new Error('meta-preload-data not found!');
+    return passResult;
   }).then(result => {
     if (decodedInstruction.textManageable) srcMessage.suppressEmbeds(true);
     return srcMessage.channel.send(q.query2msg(result,decodedInstruction.data.website));
@@ -34,7 +35,7 @@ function getImageInfos(decodedInstruction, srcMessage, dbLog, cacheDb) {
     dbLog['currentPage'] = 1;
     return message;
   }).then(message => {
-    message.react('⭐');
+    message.react(reaction);
     return message;
   }).then(message => {
     if (passResult.pageCount > 1)
@@ -61,7 +62,10 @@ function getImageInfos(decodedInstruction, srcMessage, dbLog, cacheDb) {
 }
 
 function urlSearch(decodedInstruction, srcMessage, dbLog, cacheDb) {
-  return q.saucenaoSearch(decodedInstruction.data.url).then(url => {
+  let channelReaction = p.readReaction(['channelFunction'], srcMessage, true);
+  let searchResult = q.saucenaoSearch(decodedInstruction.data.url);
+  return Promise.all([channelReaction, searchResult]).then(resultAry => {
+    let [reaction, url] = resultAry;
     if (url == null) throw new Error('Not found');
     dbLog['sourceContent'] = decodedInstruction.data.url;
     if (url.match(new RegExp(`^https:\/\/www\.pixiv\.net\/.+`,'i')) != null){
@@ -85,7 +89,7 @@ function urlSearch(decodedInstruction, srcMessage, dbLog, cacheDb) {
         dbLog['replyId'] = message.id;
         return message;
       }).then(message => {
-        message.react('⭐');
+        message.react(reaction);
         return message;
       }).then(message => {
         message.react('🗑️');
