@@ -195,7 +195,7 @@ function conditionCheck (opCode, objectCheck) {
       .match(textInstructionSet.urlSearch.patt) != null;
     case 'moduleSwitch':
       check = false;
-      botModule = objectCheck.content.split(" ")[1];
+      var botModule = objectCheck.content.split(" ")[1];
       for (i=0;i<moduleName.length;i++) {
         if (botModule.match(new RegExp(`^${moduleName[i]}`,'i')) != null){
           check = true;
@@ -429,7 +429,7 @@ function permissionCheckBot2(opCode, messageObject, defaultFunctionEnable = 0xFF
 */
 
 module.exports = {
-  returnBit,
+  permissionOpCode,
   writeBack,
   conditionCheck,
   readFunctionEnable,

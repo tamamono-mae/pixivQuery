@@ -107,7 +107,14 @@ function urlSearch(decodedInstruction, srcMessage, dbLog, cacheDb) {
   });
 }
 
+function replyMessage(srcMessage, content) {
+  return new Promise((resolve, reject) => {
+    resolve(srcMessage.channel.send(content));
+  })
+}
+
 module.exports = {
   getImageInfos,
-  urlSearch
+  urlSearch,
+  replyMessage
 };

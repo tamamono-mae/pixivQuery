@@ -35,6 +35,7 @@ const logger = winston.createLogger({
 });
 const client = new Discord.Client();
 const functionEnableDefault = 0xFF;
+const deleteMessageDelay = 5000;
 let patt = {
   "pixiv" : /^.*\.pixiv\..*\/(\d+)/i,
   "pixivE": /^.*\.pixiv\..*member_illust\.php.*illust_id=(\d+)/i
@@ -63,7 +64,9 @@ function pageSwitch(entry, messageReaction, isForward) {
     .then(result => {
     messageReaction.message.edit(q.query2msg(result,urlDump(entry.sourceContent)['website']));
   });
-  cacheDb('cacheMsg').where('sourceChannel', messageReaction.message.channel.id).andWhere('replyId', messageReaction.message.id)
+  cacheDb('cacheMsg')
+  .where('sourceChannel', messageReaction.message.channel.id)
+  .andWhere('replyId', messageReaction.message.id)
   .update({
     currentPage: entry.currentPage+pageOffset(isForward)
   }).then(()=>{});
@@ -272,22 +275,47 @@ client.on("message", function(srcMessage) {
           return p.readFunctionEnable(decodedInstruction['dstTable'], srcMessage)
           .then((functionEnableArr) => {
             let [guildEnable , channelEnable] = functionEnableArr;
-            if ((decodedInstruction.data.operation.match(/enable/i) != null)
-             == ((((guildEnable & channelEnable) >> p.returnBit(decodedInstruction.data.botModule) & 1)) == 1))
+            decodedInstruction.data.operation =
+            (decodedInstruction.data.operation.match(/enable/i) != null);
+            if (decodedInstruction.data.operation ==
+              ((
+                ((guildEnable & channelEnable) >> p.permissionOpCode[decodedInstruction.data.botModule]['bit'] & 1)
+              ) == 1))
              throw new Error('No modification made');
             else return (decodedInstruction.data.isGlobal ?
               {
                 "table": decodedInstruction.dstTable[0],
-                "data": {"functionEnable" :(guildEnable ^ (1 << p.returnBit(decodedInstruction.data.botModule)))},
+                "data": {
+                  "functionEnable" :(
+                    guildEnable ^ (1 << p.permissionOpCode[decodedInstruction.data.botModule]['bit'])
+                  )
+                },
                 "isGlobal": decodedInstruction.data.isGlobal
               } :
               {
                 "table": decodedInstruction.dstTable[1],
-                "data": {"functionEnable" :(channelEnable ^ (1 << p.returnBit(decodedInstruction.data.botModule)))},
+                "data": {
+                  "functionEnable" :(
+                    channelEnable ^ (1 << p.permissionOpCode[decodedInstruction.data.botModule]['bit'])
+                  )
+                },
                 "isGlobal": decodedInstruction.data.isGlobal
               }
             );
           }).then(dbWrite => {
+            a.replyMessage(
+              srcMessage,
+              decodedInstruction.data.botModule +
+              ((decodedInstruction.data.operation) ?
+              ' 🇴 🇳' : ' 🇴 🇫 🇫')
+            ).then(message => {
+              setTimeout((() => {
+                message.delete();
+              }), deleteMessageDelay);
+            })
+            setTimeout((() => {
+              srcMessage.delete();
+            }), deleteMessageDelay);
             p.writeBack(decodedInstruction.opCode,
               configDb,
               dbWrite.table,
@@ -461,5 +489,7 @@ client.on("messageReactionAdd", (messageReaction) => {
 });
 
 client.on("messageDelete", (message) => {
-  cacheDb('cacheMsg').where('sourceChannel', message.channel.id).andWhere('replyId', message.id).del().then(()=>{});
+  cacheDb('cacheMsg')
+  .where('sourceChannel', message.channel.id)
+  .andWhere('replyId', message.id).del().then(()=>{});
 });
