@@ -17,6 +17,8 @@ const configDb = require('knex')({
 
 function getImageInfos(decodedInstruction, srcMessage, dbLog, cacheDb) {
   var passResult = {};
+  //let channelReaction = p.readReaction(decodedInstruction['dstTable'], srcMessage, true);
+  //let queryResult = q.pixivQuery(decodedInstruction.data.pixivID, 1);
   return q.pixivQuery(decodedInstruction.data.pixivID, 1).then(result => {
     if (result == null) throw new Error('meta-preload-data not found!');
     passResult = result;
@@ -113,8 +115,20 @@ function replyMessage(srcMessage, content) {
   })
 }
 
+function replyConfigMessage(srcMessage, content, delay = 10) {
+  replyMessage(srcMessage,content)
+  .then(message => {
+    setTimeout((() => {
+      message.delete();
+    }), delay);
+  })
+  setTimeout((() => {
+    srcMessage.delete();
+  }), delay);
+}
+
 module.exports = {
   getImageInfos,
   urlSearch,
-  replyMessage
+  replyConfigMessage
 };

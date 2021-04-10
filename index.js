@@ -75,9 +75,6 @@ function pageSwitch(entry, messageReaction, isForward) {
 client.login(config.BOT_TOKEN);
 
 client.on("message", function(srcMessage) {
-  //console.log(p.permissionCheckBot("imgQuery", srcMessage, 0xF));
-  //console.log(permissionCheck(srcMessage) ? 4096:0);
-  //console.log(srcMessage.author.id);
   var is_dm = srcMessage.channel.type == 'dm';
   var isText = srcMessage.channel.type == 'text';
   //if (srcMessage.author.bot || !permissionCheck(srcMessage, 85056)) return;
@@ -280,8 +277,14 @@ client.on("message", function(srcMessage) {
             if (decodedInstruction.data.operation ==
               ((
                 ((guildEnable & channelEnable) >> p.permissionOpCode[decodedInstruction.data.botModule]['bit'] & 1)
-              ) == 1))
-             throw new Error('No modification made');
+              ) == 1)) {
+                a.replyConfigMessage(
+                  srcMessage,
+                  'No modification made',
+                  deleteMessageDelay
+                );
+                throw new Error('No modification made');
+              }
             else return (decodedInstruction.data.isGlobal ?
               {
                 "table": decodedInstruction.dstTable[0],
@@ -303,25 +306,62 @@ client.on("message", function(srcMessage) {
               }
             );
           }).then(dbWrite => {
-            a.replyMessage(
+            a.replyConfigMessage(
               srcMessage,
               decodedInstruction.data.botModule +
               ((decodedInstruction.data.operation) ?
-              ' 🇴 🇳' : ' 🇴 🇫 🇫')
-            ).then(message => {
-              setTimeout((() => {
-                message.delete();
-              }), deleteMessageDelay);
-            })
-            setTimeout((() => {
-              srcMessage.delete();
-            }), deleteMessageDelay);
-            p.writeBack(decodedInstruction.opCode,
+              ' 🇴 🇳' : ' 🇴 🇫 🇫'),
+              deleteMessageDelay
+            );
+            p.writeBack(
+              decodedInstruction.opCode,
               configDb,
               dbWrite.table,
               dbWrite.data,
               srcMessage,
               {"isGlobal" : dbWrite.isGlobal}
+            );
+            return {
+              type:'Config',
+              sourceId: dbLog.sourceId,
+              sourceUserId: dbLog.sourceUserId,
+              sourceTimestamp: dbLog.sourceTimestamp,
+              sourceContent: dbLog.sourceContent,
+              sourceChannel: dbLog.sourceChannel,
+              sourceGuild: dbLog.sourceGuild,
+              replyContent: ""
+            }
+          });
+        case 'setReaction':
+          dbLog['type'] = 'Config';
+          return p.readReaction(decodedInstruction['dstTable'], srcMessage)
+          .then(reaction => {
+            if (decodedInstruction.data.reaction == reaction) {
+              a.replyConfigMessage(
+                srcMessage,
+                'No modification made',
+                deleteMessageDelay
+              );
+              throw new Error('No modification made');
+            }
+            else return {
+              "table": decodedInstruction.dstTable[0],
+              "data": {
+                "reaction" : decodedInstruction.data.reaction
+              }
+            };
+          }).then(dbWrite => {
+            a.replyConfigMessage(
+              srcMessage,
+              dbWrite.data.reaction,
+              deleteMessageDelay
+            );
+            p.writeBack(
+              decodedInstruction.opCode,
+              configDb,
+              dbWrite.table,
+              dbWrite.data,
+              srcMessage
             );
             return {
               type:'Config',

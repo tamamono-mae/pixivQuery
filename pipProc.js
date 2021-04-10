@@ -20,6 +20,7 @@ function 查圖
 */
 const config = require("../token/config3.json");
 const functionEnableDefault = 0x7F;
+const defaultReaction = '❤️';
 const cacheDb = require('knex')({
   client: 'sqlite3',
   connection: {
@@ -66,6 +67,14 @@ let textInstructionSet = {
     },
     "dstTable": ['cacheMsg']
   },
+  "setReaction": {
+    "patt": new RegExp(`^${config.prefix} setReaction (..)`,'i'),
+    "opCode": 'setReaction',
+    "varMap": {
+      "reaction": 1
+    },
+    "dstTable": ['channelFunction']
+  },
   "moduleSwitch": {
     "patt": new RegExp(`^${config.prefix} (.+) (enable|disable)( global)*`,'i'),
     "opCode": 'moduleSwitch',
@@ -75,12 +84,7 @@ let textInstructionSet = {
       "isGlobal": 3
     },
     "dstTable": ['guildFunction', 'channelFunction']
-  },
-  /*
-  "setReaction": {
-
   }
-  */
 };
 /*
 網址自動查圖
@@ -122,6 +126,7 @@ let permissionOpCode = {
   "imgQuery" : { perm: 0x1F , bit: 2 },
   // 1 1 1 1 1
   "moduleSwitch": { perm: 0x18 },
+  "setReaction": { perm: 0x18 },
   // 1 1 0 0 0
   "removeEmbedMsg": { perm: 0x1C },
   // 1 1 1 0 0
@@ -156,6 +161,13 @@ function writeBack(opCode, dstDb, dstTable, data, messageObject = null, data2pas
       });
       */
       break;
+    case 'setReaction':
+      dstDb(dstTable)
+      .where('guildId', messageObject.guild.id)
+      .andWhere('channelId', messageObject.channel.id)
+      .update(data)
+      .then(()=>{});
+      break;
     case 'moduleSwitch':
       if (data2pass.isGlobal){
         dstDb(dstTable)
@@ -189,6 +201,7 @@ function conditionCheck (opCode, objectCheck) {
   switch (opCode) {
     case 'getImageInfos':
     case 'urlSearch':
+    case 'setReaction':
       return true;
     case 'imgQuery':
       return objectCheck.attachments.array()[0]['attachment']
@@ -197,7 +210,7 @@ function conditionCheck (opCode, objectCheck) {
       check = false;
       var botModule = objectCheck.content.split(" ")[1];
       for (i=0;i<moduleName.length;i++) {
-        if (botModule.match(new RegExp(`^${moduleName[i]}`,'i')) != null){
+        if (botModule.match(new RegExp(`^${moduleName[i]}`,'gm')) != null){
           check = true;
           break;
         }
@@ -251,6 +264,29 @@ function conditionCheck (opCode, objectCheck) {
   }
 }
 
+function readReaction(dstTable, messageObject, is_ro = false) {
+  return configDb(dstTable[0])
+  .where('guildId', messageObject.guild.id)
+  .andWhere('channelId', messageObject.channel.id)
+  .select('reaction')
+  .then(rows => {
+    if (rows.length > 0) return rows[0]['reaction'];
+    else if (is_ro){
+      return defaultReaction;
+    }
+    else {
+      return configDb(dstTable[0]).insert([{
+        "guildId" : messageObject.guild.id,
+        "channelId" : messageObject.channel.id,
+        "functionEnable" : functionEnableDefault,
+        "reaction" : defaultReaction
+      }]).then(()=>{
+        return defaultReaction;
+      });
+    }
+  })
+}
+
 function readFunctionEnable(dstTable, messageObject, is_ro = false) {
   let guildEnable = configDb(dstTable[0])
   .where('guildId', messageObject.guild.id)
@@ -280,7 +316,8 @@ function readFunctionEnable(dstTable, messageObject, is_ro = false) {
       return configDb(dstTable[1]).insert([{
         "guildId" : messageObject.guild.id,
         "channelId" : messageObject.channel.id,
-        "functionEnable" : functionEnableDefault
+        "functionEnable" : functionEnableDefault,
+        "reaction" : defaultReaction
       }]).then(()=>{
         return functionEnableDefault;
       });
@@ -432,6 +469,7 @@ module.exports = {
   permissionOpCode,
   writeBack,
   conditionCheck,
+  readReaction,
   readFunctionEnable,
   permissionCheckBot,
   permissionCheckUserDM,
