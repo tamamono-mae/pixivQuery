@@ -25,7 +25,7 @@ function getImageInfos(decodedInstruction, srcMessage, dbLog, cacheDb) {
     if (passResult == null) throw new Error('meta-preload-data not found!');
     return passResult;
   }).then(result => {
-    if (decodedInstruction.textManageable) srcMessage.suppressEmbeds(true);
+    if (decodedInstruction.manageMessages) srcMessage.suppressEmbeds(true);
     return srcMessage.channel.send(q.query2msg(result,decodedInstruction.data.website));
   }).then(message => {
     if (passResult.pageCount > 1)

@@ -106,7 +106,7 @@ client.on("message", function(srcMessage) {
         if (! permissionBotResult[0] ) throw new Error("Function " + result['opCode'] + " disabled");
         if (! conditionResult ) throw null;
       }else{
-        result['textManageable'] = permissionBotResult[1];
+        result['manageMessages'] = permissionBotResult[1];
         return result;
       };
     }).then((decodedInstruction) => {
@@ -130,7 +130,7 @@ client.on("message", function(srcMessage) {
           srcMessage
         );
         result.logger.type = 'Image Search';
-        if (decodedInstruction.textManageable)
+        if (decodedInstruction.manageMessages)
           client.channels.cache.get(dbLog.sourceChannel)
           .messages.cache.get(dbLog.sourceId).delete();
         return result.logger;
@@ -171,7 +171,7 @@ client.on("message", function(srcMessage) {
         if (! permissionBotResult[0] ) throw new Error("Function " + result['opCode'] + " disabled");
         if (! conditionResult ) throw null;
       }else{
-        result['textManageable'] = permissionBotResult[1];
+        result['manageMessages'] = permissionBotResult[1];
         return result;
       };
     }).then((decodedInstruction) => {
@@ -207,7 +207,7 @@ client.on("message", function(srcMessage) {
             passResult = result;
             return result;
           }).then(result => {
-            if (decodedInstruction.textManageable) srcMessage.suppressEmbeds(true);
+            if (decodedInstruction.manageMessages) srcMessage.suppressEmbeds(true);
             return srcMessage.channel.send(q.query2msg(result,decodedInstruction.data.website));
           }).then(message => {
             if (passResult.pageCount > 1)
@@ -258,7 +258,7 @@ client.on("message", function(srcMessage) {
               result.dbLog,
               srcMessage
             );
-            if (decodedInstruction.textManageable)
+            if (decodedInstruction.manageMessages)
               client.channels.cache.get(dbLog.sourceChannel)
               .messages.cache.get(dbLog.sourceId).delete();
             //result['logger']['type'] = 'URL Search';
@@ -450,7 +450,7 @@ client.on("messageReactionAdd", (messageReaction) => {
       if (! permissionBotResult[0] ) throw new Error("Function " + result['opCode'] + " disabled");
       if (! conditionResult ) throw null;
     }else{
-      result['textManageable'] = permissionBotResult[1];
+      result['manageMessages'] = permissionBotResult[1];
       return result;
     };
   }).then(decodedInstruction => {
@@ -484,7 +484,7 @@ client.on("messageReactionAdd", (messageReaction) => {
           sourceUserId = rows[0]['sourceUserId'];
           let srcmsg = client.channels.cache.get(rows[0]['sourceChannel'])
           .messages.cache.get(rows[0]['sourceId']);
-          if (srcmsg != null)
+          if (srcmsg != null && decodedInstruction.manageMessages)
             srcmsg.suppressEmbeds(false);
           return messageReaction.message.delete().then(message => {
             return message;
