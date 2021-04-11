@@ -51,10 +51,6 @@ function urlDump(msg) {
   return null;
 }
 
-function permissionCheck(messageObject, permission = 8192){
-  return messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(permission);
-}
-
 function turnPage(entry, messageReaction, isForward) {
   q.pixivQuery(
     urlDump(entry.sourceContent)['data'],
@@ -70,15 +66,33 @@ function turnPage(entry, messageReaction, isForward) {
   }).then(()=>{});
 }
 
+function helpMessage(descriptionAry, moduleName, color, thumbnail) {
+  var helpMsg = {
+    "embed": {
+    "title": "Manager commands",
+    "description": "",
+    "color": 0,
+    "thumbnail": {
+      "url": ""
+    }
+  }};
+  var modules = "";
+  moduleName.forEach(item => {
+    modules += "> `" + item + "`\n";
+  });
+  helpMsg.embed.description =
+  descriptionAry[0] + modules + descriptionAry[1];
+  helpMsg.embed.color = color;
+  helpMsg.embed.thumbnail.url = thumbnail;
+  return helpMsg;
+}
+
 client.login(config.BOT_TOKEN);
 
 client.on("message", function(srcMessage) {
   var is_dm = srcMessage.channel.type == 'dm';
   var isText = srcMessage.channel.type == 'text';
-  //if (srcMessage.author.bot || !permissionCheck(srcMessage, 85056)) return;
   if (srcMessage.author.bot || !(is_dm || isText)) return;
-  //if (!message.content.startsWith(config.prefix) && !is_dm) return;
-  //var msgbody = (is_dm) ? message.content : message.content.slice(config.prefix.length);
   if (srcMessage.attachments.array().length == 1) {
     let result = {
       "opCode": 'imgSearch',
@@ -198,51 +212,6 @@ client.on("message", function(srcMessage) {
             );
             return result.logger;
           });
-          /*
-          return q.pixivQuery(decodedInstruction.data.pixivID, 1).then(result => {
-            if (!result) throw new Error('meta-preload-data not found!');
-            passResult = result;
-            return result;
-          }).then(result => {
-            if (decodedInstruction.manageMessages) srcMessage.suppressEmbeds(true);
-            return srcMessage.channel.send(q.query2msg(result,decodedInstruction.data.website));
-          }).then(message => {
-            if (passResult.pageCount > 1)
-              message.react('⏮️');
-            dbLog['replyId'] = message.id;
-            dbLog['pageCount'] = passResult.pageCount;
-            dbLog['currentPage'] = 1;
-            return message;
-          }).then(message => {
-            message.react('⭐');
-            return message;
-          }).then(message => {
-            if (passResult.pageCount > 1)
-              message.react('⏭️');
-            return message;
-          }).then(message => {
-            message.react('🗑️');
-            return message;
-          }).then((message) => {
-            p.writeBack(
-              decodedInstruction.opCode,
-              cacheDb,
-              decodedInstruction.dstTable[0],
-              dbLog,
-              message
-            );
-            return {
-              type:'Query',
-              sourceId: dbLog.sourceId,
-              sourceUserId: dbLog.sourceUserId,
-              sourceTimestamp: dbLog.sourceTimestamp,
-              sourceContent: dbLog.sourceContent,
-              sourceChannel: dbLog.sourceChannel,
-              sourceGuild: dbLog.sourceGuild,
-              replyContent: srcMessage.embeds[0]
-            }
-          })
-          */
           break;
         case 'urlSearch':
           dbLog['type'] = 'URL Search';
@@ -372,9 +341,24 @@ client.on("message", function(srcMessage) {
             }
           });
         case 'help':
-          dbLog['type'] = 'Help';
-          srcMessage.author.send('Hi');
-          throw 'OK';
+          //dbLog['type'] = 'Help';
+          var messageContent = helpMessage(
+            config.commandDescription,
+            p.moduleName,
+            config.colors[1],
+            config.thumbnail
+          )
+          srcMessage.author.send(messageContent);
+          return {
+            type:'Help',
+            sourceId: dbLog.sourceId,
+            sourceUserId: dbLog.sourceUserId,
+            sourceTimestamp: dbLog.sourceTimestamp,
+            sourceContent: dbLog.sourceContent,
+            sourceChannel: dbLog.sourceChannel,
+            sourceGuild: dbLog.sourceGuild,
+            replyContent: messageContent
+          };
       }
     }).then(logInfo => {
       logger.info(logInfo);

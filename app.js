@@ -30,7 +30,7 @@ function getImageInfos(decodedInstruction, srcMessage, dbLog, cacheDb) {
     return srcMessage.channel.send(q.query2msg(result,decodedInstruction.data.website));
   }).then(message => {
     if (passResult.pageCount > 1)
-      message.react('⏮️');
+      message.react('⏪');
     dbLog['replyId'] = message.id;
     dbLog['pageCount'] = passResult.pageCount;
     dbLog['currentPage'] = 1;
@@ -40,7 +40,7 @@ function getImageInfos(decodedInstruction, srcMessage, dbLog, cacheDb) {
     return message;
   }).then(message => {
     if (passResult.pageCount > 1)
-      message.react('⏭️');
+      message.react('⏩');
     return message;
   }).then(message => {
     message.react('🗑️');

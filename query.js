@@ -112,7 +112,7 @@ function query2msg(data,type){
           "title": data['title']+ (data['pageCount'] > 1 ? (' ('+data['currentPage']+'/'+data['pageCount']+')') : ''),
           "description": data['description'],
           "url": data['url'],
-          "color": data['xRestrict'] == 0 ? 4036607 : 13859410,
+          "color": data['xRestrict'] == 0 ? config.colors[0] : config.colors[1],
           "fields": [
             {
               "name": "Author",

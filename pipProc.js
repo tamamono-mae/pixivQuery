@@ -83,7 +83,7 @@ let textInstructionSet = {
 */
 let reactionSet = {
   "nextPage": {
-    "patt": "⏭️" ,
+    "patt": "⏩" ,
     "opCode": "turnPage",
     "varExt": {
       "isNext": true
@@ -91,7 +91,7 @@ let reactionSet = {
     "dstTable": ['cacheMsg']
   },
   "previousPage": {
-    "patt": "⏮️" ,
+    "patt": "⏪" ,
     "opCode": "turnPage",
     "varExt": {
       "isNext": false
@@ -212,13 +212,13 @@ function conditionCheck (opCode, objectCheck) {
       .then((rows) => {
         rows.forEach((entry) => {
           if (
-            objectCheck.emoji.name == '⏭️' &&
+            objectCheck.emoji.name == '⏩' &&
             entry.currentPage < entry.pageCount &&
             entry.pageCount > 1 &&
             objectCheck.count > 1)
               check = true;
           if (
-            objectCheck.emoji.name == '⏮️' &&
+            objectCheck.emoji.name == '⏪' &&
             entry.currentPage > 1 &&
             entry.pageCount > 1 &&
             objectCheck.count > 1)
@@ -430,6 +430,7 @@ function instructionDecode(msg) {
 
 module.exports = {
   permissionOpCode,
+  moduleName,
   writeBack,
   conditionCheck,
   readReaction,
