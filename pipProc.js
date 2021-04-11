@@ -2,36 +2,19 @@
 sudo mount -t vboxsf -o uid=$UID,gid=$(id -g) pixivQuery pixivQuery
 sudo mount -t vboxsf -o uid=$UID,gid=$(id -g) env env
 sudo mount -t vboxsf -o uid=$UID,gid=$(id -g) token token
-instruction fetch >> authtication (iP/oP) >> process >> resultCheck >> response
-function embedMessage
-  查詢pixiv => embedMessage
-function 查圖
-  查詢Saucenao
-  if 相似度 > 90
-    if url符合pixiv pattern => embedMessage
-    if url符合twitter pattern => normalMessage
-      else normalMessage
-訊息內容符合pixiv pattern => embedMessage
-訊息內容符合picture file pattern=>
-  function 查圖
-訊息內容是附加檔案
-  if附加檔案url符合picture file pattern=>
-    function 查圖
 */
 const config = require("../token/config3.json");
-const functionEnableDefault = 0x7F;
-const defaultReaction = '❤️';
 const cacheDb = require('knex')({
   client: 'sqlite3',
   connection: {
-    filename: "../env/pixivQuery.db"
+    filename: config.pathToCacheDb
   },
   useNullAsDefault: true
 });
 const configDb = require('knex')({
   client: 'sqlite3',
   connection: {
-    filename: "../env/pixivQueryConfig.db"
+    filename: config.pathToConfigDb
   },
   useNullAsDefault: true
 });
@@ -58,6 +41,11 @@ let textInstructionSet = {
       "website": "pixiv"
     },
     "dstTable": ['cacheMsg']
+  },
+  "help": {
+    "patt": new RegExp(`^${config.prefix} help`,'i'),
+    "opCode": 'help',
+    "varMap": {}
   },
   "urlSearch": {
     "patt": /^(https|http):\/\/(.+)(.jpg|.png)/i ,
@@ -96,7 +84,7 @@ let textInstructionSet = {
 let reactionSet = {
   "nextPage": {
     "patt": "⏭️" ,
-    "opCode": "pageSwitch",
+    "opCode": "turnPage",
     "varExt": {
       "isNext": true
     },
@@ -104,7 +92,7 @@ let reactionSet = {
   },
   "previousPage": {
     "patt": "⏮️" ,
-    "opCode": "pageSwitch",
+    "opCode": "turnPage",
     "varExt": {
       "isNext": false
     },
@@ -119,34 +107,32 @@ let reactionSet = {
 
 let permissionOpCode = {
   /* guildOwner txtmanager originalAuthor is_text everyone*/
+  "help" : { perm: 0x1F },
+  // 1 1 1 1 1
   "getImageInfos" : { perm: 0x1E , bit: 0 },
   // 1 1 1 1 0
   "urlSearch" : { perm: 0x1F , bit: 1 },
   // 1 1 1 1 1
-  "imgQuery" : { perm: 0x1F , bit: 2 },
+  "imgSearch" : { perm: 0x1F , bit: 2 },
   // 1 1 1 1 1
   "moduleSwitch": { perm: 0x18 },
   "setReaction": { perm: 0x18 },
   // 1 1 0 0 0
   "removeEmbedMsg": { perm: 0x1C },
   // 1 1 1 0 0
-  "pageSwitch": { perm: 0x1F }
+  "turnPage": { perm: 0x1F }
   // 1 1 1 1 1
 }
 
 let moduleName = [
-  "getImageInfos", "urlSearch", "imgQuery"
+  "getImageInfos", "urlSearch", "imgSearch"
 ]
-
-function returnBit(botModule) {
-  return permissionOpCode[botModule]['bit'];
-}
 
 function writeBack(opCode, dstDb, dstTable, data, messageObject = null, data2pass=null) {
   switch (opCode) {
     case 'getImageInfos':
     case 'urlSearch':
-    case 'imgQuery':
+    case 'imgSearch':
       dstDb(dstTable).insert([data]).then(()=>{});
       /*
       logger.info({
@@ -201,9 +187,10 @@ function conditionCheck (opCode, objectCheck) {
   switch (opCode) {
     case 'getImageInfos':
     case 'urlSearch':
+    case 'help':
     case 'setReaction':
       return true;
-    case 'imgQuery':
+    case 'imgSearch':
       return objectCheck.attachments.array()[0]['attachment']
       .match(textInstructionSet.urlSearch.patt) != null;
     case 'moduleSwitch':
@@ -216,7 +203,7 @@ function conditionCheck (opCode, objectCheck) {
         }
       }
       return check;
-    case 'pageSwitch':
+    case 'turnPage':
       check = false;
       return cacheDb('cacheMsg')
       .where('sourceChannel', objectCheck.message.channel.id)
@@ -272,16 +259,16 @@ function readReaction(dstTable, messageObject, is_ro = false) {
   .then(rows => {
     if (rows.length > 0) return rows[0]['reaction'];
     else if (is_ro){
-      return defaultReaction;
+      return config.defaultReaction;
     }
     else {
       return configDb(dstTable[0]).insert([{
         "guildId" : messageObject.guild.id,
         "channelId" : messageObject.channel.id,
-        "functionEnable" : functionEnableDefault,
-        "reaction" : defaultReaction
+        "functionEnable" : config.defaultPermissionBitfield,
+        "reaction" : config.defaultReaction
       }]).then(()=>{
-        return defaultReaction;
+        return config.defaultReaction;
       });
     }
   })
@@ -293,14 +280,14 @@ function readFunctionEnable(dstTable, messageObject, is_ro = false) {
   .then(rows => {
     if (rows.length > 0) return rows[0]['functionEnable'];
     else if (is_ro){
-      return functionEnableDefault;
+      return config.defaultPermissionBitfield;
     }
     else {
       return configDb(dstTable[0]).insert([{
         "guildId" : messageObject.guild.id,
-        "functionEnable" : functionEnableDefault
+        "functionEnable" : config.defaultPermissionBitfield
       }]).then(()=>{
-        return functionEnableDefault;
+        return config.defaultPermissionBitfield;
       });
     }
   });
@@ -310,16 +297,16 @@ function readFunctionEnable(dstTable, messageObject, is_ro = false) {
   .then(rows => {
     if (rows.length > 0) return rows[0]['functionEnable'];
     else if (is_ro){
-      return functionEnableDefault;
+      return config.defaultPermissionBitfield;
     }
     else {
       return configDb(dstTable[1]).insert([{
         "guildId" : messageObject.guild.id,
         "channelId" : messageObject.channel.id,
-        "functionEnable" : functionEnableDefault,
-        "reaction" : defaultReaction
+        "functionEnable" : config.defaultPermissionBitfield,
+        "reaction" : config.defaultReaction
       }]).then(()=>{
-        return functionEnableDefault;
+        return config.defaultPermissionBitfield;
       });
     }
   });

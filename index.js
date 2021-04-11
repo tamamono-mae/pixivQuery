@@ -8,14 +8,14 @@ const a = require("./app.js");
 const cacheDb = require('knex')({
   client: 'sqlite3',
   connection: {
-    filename: "../env/pixivQuery.db"
+    filename: config.pathToCacheDb
   },
   useNullAsDefault: true
 });
 const configDb = require('knex')({
   client: 'sqlite3',
   connection: {
-    filename: "../env/pixivQueryConfig.db"
+    filename: config.pathToConfigDb
   },
   useNullAsDefault: true
 });
@@ -30,12 +30,10 @@ const logger = winston.createLogger({
   defaultMeta: { service: 'user-service' },
   transports: [
     //new winston.transports.Console(),
-    new winston.transports.File({ filename: npath.join(__dirname, '/pixivQuery.log') })
+    new winston.transports.File({ filename: npath.join(__dirname, config.pathToLog) })
   ],
 });
 const client = new Discord.Client();
-const functionEnableDefault = 0xFF;
-const deleteMessageDelay = 5000;
 let patt = {
   "pixiv" : /^.*\.pixiv\..*\/(\d+)/i,
   "pixivE": /^.*\.pixiv\..*member_illust\.php.*illust_id=(\d+)/i
@@ -57,7 +55,7 @@ function permissionCheck(messageObject, permission = 8192){
   return messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(permission);
 }
 
-function pageSwitch(entry, messageReaction, isForward) {
+function turnPage(entry, messageReaction, isForward) {
   q.pixivQuery(
     urlDump(entry.sourceContent)['data'],
     entry.currentPage+pageOffset(isForward))
@@ -83,7 +81,7 @@ client.on("message", function(srcMessage) {
   //var msgbody = (is_dm) ? message.content : message.content.slice(config.prefix.length);
   if (srcMessage.attachments.array().length == 1) {
     let result = {
-      "opCode": 'imgQuery',
+      "opCode": 'imgSearch',
       "varMap": {},
       "data": {
         "url": srcMessage.attachments.array()[0]['attachment']
@@ -100,7 +98,6 @@ client.on("message", function(srcMessage) {
     Promise.all([result, permissionUserResult, permissionBotResult, conditionResult])
     .then(resultAry => {
       let [result, permissionUserResult, permissionBotResult, conditionResult] = resultAry;
-
       if (! (permissionUserResult & permissionBotResult[0] & conditionResult) ) {
         if (! permissionUserResult ) throw new Error("User permission denied");
         if (! permissionBotResult[0] ) throw new Error("Function " + result['opCode'] + " disabled");
@@ -249,7 +246,7 @@ client.on("message", function(srcMessage) {
           break;
         case 'urlSearch':
           dbLog['type'] = 'URL Search';
-          a.urlSearch(decodedInstruction, srcMessage, dbLog, cacheDb)
+          return a.urlSearch(decodedInstruction, srcMessage, dbLog, cacheDb)
           .then(result => {
             p.writeBack(
               decodedInstruction.opCode,
@@ -281,7 +278,7 @@ client.on("message", function(srcMessage) {
                 a.replyConfigMessage(
                   srcMessage,
                   'No modification made',
-                  deleteMessageDelay
+                  config.deleteMessageDelay
                 );
                 throw new Error('No modification made');
               }
@@ -311,7 +308,7 @@ client.on("message", function(srcMessage) {
               decodedInstruction.data.botModule +
               ((decodedInstruction.data.operation) ?
               ' 🇴 🇳' : ' 🇴 🇫 🇫'),
-              deleteMessageDelay
+              config.deleteMessageDelay
             );
             p.writeBack(
               decodedInstruction.opCode,
@@ -340,7 +337,7 @@ client.on("message", function(srcMessage) {
               a.replyConfigMessage(
                 srcMessage,
                 'No modification made',
-                deleteMessageDelay
+                config.deleteMessageDelay
               );
               throw new Error('No modification made');
             }
@@ -354,7 +351,7 @@ client.on("message", function(srcMessage) {
             a.replyConfigMessage(
               srcMessage,
               dbWrite.data.reaction,
-              deleteMessageDelay
+              config.deleteMessageDelay
             );
             p.writeBack(
               decodedInstruction.opCode,
@@ -374,6 +371,10 @@ client.on("message", function(srcMessage) {
               replyContent: ""
             }
           });
+        case 'help':
+          dbLog['type'] = 'Help';
+          srcMessage.author.send('Hi');
+          throw 'OK';
       }
     }).then(logInfo => {
       logger.info(logInfo);
@@ -455,13 +456,13 @@ client.on("messageReactionAdd", (messageReaction) => {
     };
   }).then(decodedInstruction => {
     switch (decodedInstruction.opCode) {
-      case 'pageSwitch':
+      case 'turnPage':
         return cacheDb('cacheMsg')
         .where('sourceChannel', messageReaction.message.channel.id)
         .andWhere('replyId', messageReaction.message.id)
         .select('sourceUserId', 'sourceContent', 'currentPage')
         .then(rows => {
-          pageSwitch(rows[0], messageReaction, decodedInstruction.data.isNext);
+          turnPage(rows[0], messageReaction, decodedInstruction.data.isNext);
           logInfo = {
             type: decodedInstruction.data.isNext ? 'Next page' : 'Previous page',
             sourceId: messageReaction.message.id,

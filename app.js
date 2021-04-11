@@ -1,16 +1,17 @@
 const p = require("./pipProc.js");
 const q = require("./query.js");
+const config = require("../token/config3.json");
 const cacheDb = require('knex')({
   client: 'sqlite3',
   connection: {
-    filename: "../env/pixivQuery.db"
+    filename: config.pathToCacheDb
   },
   useNullAsDefault: true
 });
 const configDb = require('knex')({
   client: 'sqlite3',
   connection: {
-    filename: "../env/pixivQueryConfig.db"
+    filename: config.pathToConfigDb
   },
   useNullAsDefault: true
 });

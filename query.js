@@ -2,7 +2,7 @@ const fetch = require("node-fetch");
 const cheerio = require("cheerio");
 const formData = require("form-data");
 const { htmlToText } = require('html-to-text');
-const similarity_threshold = 93;
+const config = require("../token/config3.json");
 
 async function checkUrls(urlArr) {
   for(var i=0;i<urlArr.length;i++) {
@@ -36,7 +36,7 @@ function saucenaoSearch(url){
     for(var i=0;i<tables.length;i++){
       var c = cheerio.load(tables[i].html());
       if (
-        (parseInt(c(".resultsimilarityinfo").text()) >= similarity_threshold) &&
+        (parseInt(c(".resultsimilarityinfo").text()) >= config.similarityThreshold) &&
         c(".resultcontentcolumn").find("a").eq(0).attr("href") != null
       ){
         results.push(c(".resultcontentcolumn").find("a").eq(0).attr("href"));
