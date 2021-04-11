@@ -19,7 +19,9 @@ const configDb = require('knex')({
 function getImageInfos(decodedInstruction, srcMessage, dbLog, cacheDb) {
   var passResult = {};
   var reaction = {};
-  let channelReaction = p.readReaction(['channelFunction'], srcMessage, true);
+  var is_dm = srcMessage.channel.type == 'dm';
+  let channelReaction = is_dm ?
+  config.defaultReaction : p.readReaction(['channelFunction'], srcMessage, true);
   let queryResult = q.pixivQuery(decodedInstruction.data.pixivID, 1);
   return Promise.all([channelReaction, queryResult]).then(resultAry => {
     [reaction, passResult] = resultAry;
@@ -63,7 +65,9 @@ function getImageInfos(decodedInstruction, srcMessage, dbLog, cacheDb) {
 }
 
 function urlSearch(decodedInstruction, srcMessage, dbLog, cacheDb) {
-  let channelReaction = p.readReaction(['channelFunction'], srcMessage, true);
+  var is_dm = srcMessage.channel.type == 'dm';
+  let channelReaction = is_dm ?
+  config.defaultReaction : p.readReaction(['channelFunction'], srcMessage, true);
   let searchResult = q.saucenaoSearch(decodedInstruction.data.url);
   return Promise.all([channelReaction, searchResult]).then(resultAry => {
     let [reaction, url] = resultAry;
@@ -72,6 +76,7 @@ function urlSearch(decodedInstruction, srcMessage, dbLog, cacheDb) {
     if (url.match(new RegExp(`^https:\/\/www\.pixiv\.net\/.+`,'i')) != null){
       decodedInstruction.data.pixivID = url.match(/^.*\.pixiv\..*member_illust\.php.*illust_id=(\d+)/i)[1];
       decodedInstruction.data.website = 'pixiv';
+      dbLog['sourceContent'] = url;
       return getImageInfos(
         decodedInstruction,
         srcMessage,

@@ -63,6 +63,11 @@ let textInstructionSet = {
     },
     "dstTable": ['channelFunction']
   },
+  "status": {
+    "patt": new RegExp(`^${config.prefix} status`,'i'),
+    "opCode": 'status',
+    "varMap": {}
+  },
   "moduleSwitch": {
     "patt": new RegExp(`^${config.prefix} (.+) (enable|disable)( global)*`,'i'),
     "opCode": 'moduleSwitch',
@@ -107,14 +112,15 @@ let reactionSet = {
 
 let permissionOpCode = {
   /* guildOwner txtmanager originalAuthor is_text everyone*/
-  "help" : { perm: 0x1F },
-  // 1 1 1 1 1
+  "help" : { perm: 0x1E },
+  // 1 1 1 1 0
   "getImageInfos" : { perm: 0x1E , bit: 0 },
   // 1 1 1 1 0
   "urlSearch" : { perm: 0x1F , bit: 1 },
   // 1 1 1 1 1
   "imgSearch" : { perm: 0x1F , bit: 2 },
   // 1 1 1 1 1
+  "status": { perm: 0x18 },
   "moduleSwitch": { perm: 0x18 },
   "setReaction": { perm: 0x18 },
   // 1 1 0 0 0
@@ -188,6 +194,7 @@ function conditionCheck (opCode, objectCheck) {
     case 'getImageInfos':
     case 'urlSearch':
     case 'help':
+    case 'status':
     case 'setReaction':
       return true;
     case 'imgSearch':
@@ -348,7 +355,7 @@ function permissionCheckUserReaction(opCode, reactionObject) {
 };
 
 function permissionCheckUserDM(opCode, isReaction = false) {
-  p = 0x1 & permissionOpCode[opCode]['perm'];
+  p = (isReaction ? 0x5 : 0x1) & permissionOpCode[opCode]['perm'];
   r = 0;
   for(i=0;i<4;i++){
     r = ((p >> i) & 1) | r;

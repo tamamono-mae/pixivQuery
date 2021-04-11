@@ -66,7 +66,7 @@ function turnPage(entry, messageReaction, isForward) {
   }).then(()=>{});
 }
 
-function helpMessage(descriptionAry, moduleName, color, thumbnail) {
+function helpMessageAdmin(descriptionAry, moduleName, color, thumbnail) {
   var helpMsg = {
     "embed": {
     "title": "Manager commands",
@@ -85,6 +85,37 @@ function helpMessage(descriptionAry, moduleName, color, thumbnail) {
   helpMsg.embed.color = color;
   helpMsg.embed.thumbnail.url = thumbnail;
   return helpMsg;
+}
+
+function statusMessage(messageObject, moduleName, color, thumbnail) {
+  var statusMsg = {
+    "embed": {
+    "title": "Status for modules in ",
+    "description": "",
+    "color": 0,
+    "thumbnail": {
+      "url": ""
+    }
+  }};
+  var moduleStatus = "🇬 🇨\n";
+  statusMsg.embed.title +=
+  messageObject.guild.name + ' and ' + messageObject.channel.name;
+  statusMsg.embed.color = color;
+  statusMsg.embed.thumbnail.url = thumbnail;
+  return p.readFunctionSwitch(['guildFunction', 'channelFunction'], messageObject, true)
+  .then(resultArr => {
+    var [guildSwitch , channelSwitch] = resultArr;
+    for(var i=0;i<moduleName.length;i++) {
+      moduleStatus +=
+      ((guildSwitch & 1) == 1 ? '✅' : '❎') + " " +
+      ((channelSwitch & 1) == 1 ? '✅' : '❎') + " " +
+      moduleName[i] + "\n";
+      guildSwitch = guildSwitch >> 1 ;
+      channelSwitch = channelSwitch >> 1 ;
+    }
+    statusMsg.embed.description = moduleStatus;
+    return statusMsg;
+  })
 }
 
 client.login(config.BOT_TOKEN);
@@ -234,15 +265,16 @@ client.on("message", function(srcMessage) {
           break;
         case 'moduleSwitch':
           dbLog['type'] = 'Config';
-          passResult = {};
+          decodedInstruction.data.isGlobal = (decodedInstruction.data.isGlobal != null);
           return p.readFunctionSwitch(decodedInstruction['dstTable'], srcMessage)
           .then((functionSwitchArr) => {
-            let [guildSwitch , channelSwitch] = functionSwitchArr;
+            let functionSwitch = decodedInstruction.data.isGlobal ?
+            functionSwitchArr[0] : functionSwitchArr[1];
             decodedInstruction.data.operation =
             (decodedInstruction.data.operation.match(/enable/i) != null);
             if (decodedInstruction.data.operation ==
               ((
-                ((guildSwitch & channelSwitch) >> p.permissionOpCode[decodedInstruction.data.botModule]['bit'] & 1)
+                (functionSwitch >> p.permissionOpCode[decodedInstruction.data.botModule]['bit'] & 1)
               ) == 1)) {
                 a.replyConfigMessage(
                   srcMessage,
@@ -256,7 +288,7 @@ client.on("message", function(srcMessage) {
                 "table": decodedInstruction.dstTable[0],
                 "data": {
                   "functionSwitch" :(
-                    guildSwitch ^ (1 << p.permissionOpCode[decodedInstruction.data.botModule]['bit'])
+                    functionSwitch ^ (1 << p.permissionOpCode[decodedInstruction.data.botModule]['bit'])
                   )
                 },
                 "isGlobal": decodedInstruction.data.isGlobal
@@ -265,7 +297,7 @@ client.on("message", function(srcMessage) {
                 "table": decodedInstruction.dstTable[1],
                 "data": {
                   "functionSwitch" :(
-                    channelSwitch ^ (1 << p.permissionOpCode[decodedInstruction.data.botModule]['bit'])
+                    functionSwitch ^ (1 << p.permissionOpCode[decodedInstruction.data.botModule]['bit'])
                   )
                 },
                 "isGlobal": decodedInstruction.data.isGlobal
@@ -342,13 +374,20 @@ client.on("message", function(srcMessage) {
           });
         case 'help':
           //dbLog['type'] = 'Help';
-          var messageContent = helpMessage(
-            config.commandDescription,
-            p.moduleName,
-            config.colors[1],
-            config.thumbnail
-          )
-          srcMessage.author.send(messageContent);
+          //var messageContent = "";
+          var adminContent = "";
+          if (srcMessage.channel.permissionsFor(srcMessage.author).has(0x2000)) {
+            adminContent =
+            helpMessageAdmin(
+              config.commandDescription,
+              p.moduleName,
+              config.colors[1],
+              config.thumbnail
+            );
+            srcMessage.author.send(adminContent);
+          }
+          //srcMessage.channel.send(messageContent);
+          srcMessage.delete();
           return {
             type:'Help',
             sourceId: dbLog.sourceId,
@@ -357,8 +396,29 @@ client.on("message", function(srcMessage) {
             sourceContent: dbLog.sourceContent,
             sourceChannel: dbLog.sourceChannel,
             sourceGuild: dbLog.sourceGuild,
-            replyContent: messageContent
+            replyContent: adminContent
           };
+        case 'status':
+          //dbLog['type'] = 'Status';
+          return statusMessage(
+            srcMessage,
+            p.moduleName,
+            config.colors[0],
+            config.thumbnail
+          ).then(statusMsg => {
+            srcMessage.author.send(statusMsg);
+            srcMessage.delete();
+            return {
+              type:'Status',
+              sourceId: dbLog.sourceId,
+              sourceUserId: dbLog.sourceUserId,
+              sourceTimestamp: dbLog.sourceTimestamp,
+              sourceContent: dbLog.sourceContent,
+              sourceChannel: dbLog.sourceChannel,
+              sourceGuild: dbLog.sourceGuild,
+              replyContent: statusMsg
+            };
+          })
       }
     }).then(logInfo => {
       logger.info(logInfo);
