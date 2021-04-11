@@ -265,7 +265,7 @@ function readReaction(dstTable, messageObject, is_ro = false) {
       return configDb(dstTable[0]).insert([{
         "guildId" : messageObject.guild.id,
         "channelId" : messageObject.channel.id,
-        "functionEnable" : config.defaultPermissionBitfield,
+        "functionSwitch" : config.defaultPermissionBitfield,
         "reaction" : config.defaultReaction
       }]).then(()=>{
         return config.defaultReaction;
@@ -274,28 +274,28 @@ function readReaction(dstTable, messageObject, is_ro = false) {
   })
 }
 
-function readFunctionEnable(dstTable, messageObject, is_ro = false) {
-  let guildEnable = configDb(dstTable[0])
+function readFunctionSwitch(dstTable, messageObject, is_ro = false) {
+  let guildSwitch = configDb(dstTable[0])
   .where('guildId', messageObject.guild.id)
   .then(rows => {
-    if (rows.length > 0) return rows[0]['functionEnable'];
+    if (rows.length > 0) return rows[0]['functionSwitch'];
     else if (is_ro){
       return config.defaultPermissionBitfield;
     }
     else {
       return configDb(dstTable[0]).insert([{
         "guildId" : messageObject.guild.id,
-        "functionEnable" : config.defaultPermissionBitfield
+        "functionSwitch" : config.defaultPermissionBitfield
       }]).then(()=>{
         return config.defaultPermissionBitfield;
       });
     }
   });
-  let channelEnable = configDb(dstTable[1])
+  let channelSwitch = configDb(dstTable[1])
   .where('guildId', messageObject.guild.id)
   .andWhere('channelId', messageObject.channel.id)
   .then(rows => {
-    if (rows.length > 0) return rows[0]['functionEnable'];
+    if (rows.length > 0) return rows[0]['functionSwitch'];
     else if (is_ro){
       return config.defaultPermissionBitfield;
     }
@@ -303,25 +303,25 @@ function readFunctionEnable(dstTable, messageObject, is_ro = false) {
       return configDb(dstTable[1]).insert([{
         "guildId" : messageObject.guild.id,
         "channelId" : messageObject.channel.id,
-        "functionEnable" : config.defaultPermissionBitfield,
+        "functionSwitch" : config.defaultPermissionBitfield,
         "reaction" : config.defaultReaction
       }]).then(()=>{
         return config.defaultPermissionBitfield;
       });
     }
   });
-  return Promise.all([guildEnable , channelEnable]);
+  return Promise.all([guildSwitch , channelSwitch]);
 }
 
 function permissionCheckBot(opCode, messageObject) {
-  return readFunctionEnable(['guildFunction', 'channelFunction'], messageObject, true)
-  .then((functionEnableArr) => {
-    let [guildEnable , channelEnable] = functionEnableArr;
+  return readFunctionSwitch(['guildFunction', 'channelFunction'], messageObject, true)
+  .then((FunctionSwitchArr) => {
+    let [guildSwitch , channelSwitch] = FunctionSwitchArr;
     return ([
       //sendMessage
       (messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(0x4800)
       //moduleEnable
-      & ((permissionOpCode[opCode]['bit'] != null) ? (((guildEnable & channelEnable) >> permissionOpCode[opCode]['bit']) & 1) : 1)) == 1,
+      & ((permissionOpCode[opCode]['bit'] != null) ? (((guildSwitch & channelSwitch) >> permissionOpCode[opCode]['bit']) & 1) : 1)) == 1,
       //manageMessage
       messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(0x2000)
     ]);
@@ -427,37 +427,13 @@ function instructionDecode(msg) {
     }
   });
 }
-/*
-function permissionCheckBot2(opCode, messageObject, defaultFunctionEnable = 0xFF) {
-  let channelFunctionEnable = configDb('channelFunction')
-  .where('guildId', messageObject.guild.id)
-  .andWhere('channelId', messageObject.channel.id)
-  .select('functionEnable')
-  .then((rows) => {
-    if (rows.length > 0)
-      return rows[0]['functionEnable'];
-    else
-      return defaultFunctionEnable;
-  });
-  let guildFunctionEnable = configDb('channelFunction')
-  .where('guildId', messageObject.guild.id)
-  .select('functionEnable')
-  .then((rows) => {
-    if (rows.length > 0)
-      return rows[0]['functionEnable'];
-    else
-      return defaultFunctionEnable;
-  });
-  return Promise.all([channelFunctionEnable, guildFunctionEnable]);
-}
-*/
 
 module.exports = {
   permissionOpCode,
   writeBack,
   conditionCheck,
   readReaction,
-  readFunctionEnable,
+  readFunctionSwitch,
   permissionCheckBot,
   permissionCheckUserDM,
   permissionCheckUserReaction,

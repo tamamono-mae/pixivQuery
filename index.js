@@ -266,14 +266,14 @@ client.on("message", function(srcMessage) {
         case 'moduleSwitch':
           dbLog['type'] = 'Config';
           passResult = {};
-          return p.readFunctionEnable(decodedInstruction['dstTable'], srcMessage)
-          .then((functionEnableArr) => {
-            let [guildEnable , channelEnable] = functionEnableArr;
+          return p.readFunctionSwitch(decodedInstruction['dstTable'], srcMessage)
+          .then((functionSwitchArr) => {
+            let [guildSwitch , channelSwitch] = functionSwitchArr;
             decodedInstruction.data.operation =
             (decodedInstruction.data.operation.match(/enable/i) != null);
             if (decodedInstruction.data.operation ==
               ((
-                ((guildEnable & channelEnable) >> p.permissionOpCode[decodedInstruction.data.botModule]['bit'] & 1)
+                ((guildSwitch & channelSwitch) >> p.permissionOpCode[decodedInstruction.data.botModule]['bit'] & 1)
               ) == 1)) {
                 a.replyConfigMessage(
                   srcMessage,
@@ -286,8 +286,8 @@ client.on("message", function(srcMessage) {
               {
                 "table": decodedInstruction.dstTable[0],
                 "data": {
-                  "functionEnable" :(
-                    guildEnable ^ (1 << p.permissionOpCode[decodedInstruction.data.botModule]['bit'])
+                  "functionSwitch" :(
+                    guildSwitch ^ (1 << p.permissionOpCode[decodedInstruction.data.botModule]['bit'])
                   )
                 },
                 "isGlobal": decodedInstruction.data.isGlobal
@@ -295,8 +295,8 @@ client.on("message", function(srcMessage) {
               {
                 "table": decodedInstruction.dstTable[1],
                 "data": {
-                  "functionEnable" :(
-                    channelEnable ^ (1 << p.permissionOpCode[decodedInstruction.data.botModule]['bit'])
+                  "functionSwitch" :(
+                    channelSwitch ^ (1 << p.permissionOpCode[decodedInstruction.data.botModule]['bit'])
                   )
                 },
                 "isGlobal": decodedInstruction.data.isGlobal
