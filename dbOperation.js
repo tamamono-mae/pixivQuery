@@ -32,7 +32,7 @@ function fetchReaction(messageObject) {
 */
 function fetchCache(messageObject) {
   return cacheDb('cacheMsg')
-  .where('sourceChannel', messageObject.channel.id)
+  .where('sourceChannelId', messageObject.channel.id)
   .andWhere('replyId', messageObject.id)
   .then(rows => {
     if (rows.length == 0) return null;
@@ -116,7 +116,7 @@ function toConfigDB(messageObject, data ,isGlobal = false) {
 
 function updateCurrentPage(reactionObject) {
   cacheDb('cacheMsg')
-  .where('sourceChannel', reactionObject.message.channel.id)
+  .where('sourceChannelId', reactionObject.message.channel.id)
   .andWhere('replyId', reactionObject.message.id)
   .update({ currentPage: reactionObject.cacheData.currentPage })
   .then(()=>{});
@@ -124,7 +124,7 @@ function updateCurrentPage(reactionObject) {
 
 function deleteCacheDBData(cacheData) {
   cacheDb('cacheMsg')
-  .where('sourceChannel', cacheData.sourceChannel)
+  .where('sourceChannelId', cacheData.sourceChannelId)
   .andWhere('replyId', cacheData.replyId)
   .del().then(()=>{});
 }

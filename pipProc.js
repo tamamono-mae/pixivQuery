@@ -2,6 +2,7 @@
 sudo mount -t vboxsf -o uid=$UID,gid=$(id -g) pixivQuery pixivQuery
 sudo mount -t vboxsf -o uid=$UID,gid=$(id -g) env env
 sudo mount -t vboxsf -o uid=$UID,gid=$(id -g) token token
+cd pixivQuery
 */
 const config = require("../token/config3.json");
 const cacheDb = require('knex')({
@@ -79,13 +80,7 @@ let textInstructionSet = {
     "dstTable": ['guildFunction', 'channelFunction']
   }
 };
-/*
-網址自動查圖
-以圖查圖
-設定模組
-刪除
-翻頁
-*/
+
 let reactionSet = {
   "nextPage": {
     "patt": "⏩" ,
@@ -355,8 +350,8 @@ function permissionCheckUserReaction(opCode, reactionObject) {
 };
 
 function permissionCheckUserDM(opCode, isReaction = false) {
-  p = (isReaction ? 0x5 : 0x1) & permissionOpCode[opCode]['perm'];
-  r = 0;
+  let p = (isReaction ? 0x5 : 0x1) & permissionOpCode[opCode]['perm'];
+  let r = 0;
   for(i=0;i<4;i++){
     r = ((p >> i) & 1) | r;
   }
@@ -364,6 +359,7 @@ function permissionCheckUserDM(opCode, isReaction = false) {
 }
 
 function permissionCheckUser(opCode, messageObject = null, authorId, reactionObject = null) {
+  var p;
   if(messageObject != null)
   p = ((messageObject.channel.guild.ownerID == messageObject.author.id ? 0x10:0)
     | (messageObject.channel.permissionsFor(messageObject.author).has(0x2000) ? 0x8:0)
@@ -374,7 +370,7 @@ function permissionCheckUser(opCode, messageObject = null, authorId, reactionObj
     | (reactionObject.message.channel.permissionsFor(reactionObject.users.cache.array().pop()).has(0x2000) ? 0x8:0)
     | (reactionObject.users.cache.has(authorId) ? 0x4:0)
     | 0x3) & permissionOpCode[opCode]['perm'];
-  r = 0;
+  let r = 0;
   for(i=0;i<4;i++){
     r = ((p >> i) & 1) | r;
   }

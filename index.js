@@ -43,7 +43,7 @@ client.on("message", function(srcMessage) {
   srcMessage.isText = (srcMessage.channel.type == 'text');
   srcMessage.isMsgObj = true;
   if (srcMessage.author.bot || !(srcMessage.isDm || srcMessage.isText)) return;
-  if (srcMessage.attachments == null) {
+  if (srcMessage.attachments.array().length == 0) {
     arch.setConfig(srcMessage).then(() => {
       arch.msgRouter(srcMessage);
     });
@@ -87,6 +87,6 @@ client.on("messageReactionAdd", (messageReaction) => {
 
 client.on("messageDelete", (message) => {
   cacheDb('cacheMsg')
-  .where('sourceChannel', message.channel.id)
+  .where('sourceChannelId', message.channel.id)
   .andWhere('replyId', message.id).del().then(()=>{});
 });

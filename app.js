@@ -41,7 +41,7 @@ async function postImageInfo(messageObject ,props) {
     sourceUserId: messageObject.author.id,
     sourceTimestamp: messageObject.createdTimestamp,
     sourceContent: messageObject.content,
-    sourceChannel: messageObject.channel.id,
+    sourceChannelId: messageObject.channel.id,
     replyId: replyMessage.id,
     pageCount: queryResult.pageCount,
     currentPage: 1,
@@ -49,26 +49,28 @@ async function postImageInfo(messageObject ,props) {
   }
   if (props.urlContent != null)
     dbWriteData.sourceContent = props.urlContent;
-  var cacheKey = 'cacheMsg_' + dbWriteData.replyId + '_' + dbWriteData.sourceChannel;
+  var cacheKey = 'cacheMsg_' + dbWriteData.replyId + '_' + dbWriteData.sourceChannelId;
   if (messageObject.guild != null) {
-    dbWriteData['sourceGuild'] = messageObject.guild.id;
+    dbWriteData['sourceGuildId'] = messageObject.guild.id;
     cacheKey += '_' + messageObject.guild.id;
   }
   dbop.toCacheDB(dbWriteData);
   dbCache.put(cacheKey, dbWriteData, config.cacheTimeout);
   /*
-  return {
-    'dbLog' : dbLog,
-    'logger' : {
-      type:'Query',
-      sourceId: dbLog.sourceId,
-      sourceUserId: dbLog.sourceUserId,
-      sourceTimestamp: dbLog.sourceTimestamp,
-      sourceContent: dbLog.sourceContent,
-      sourceChannel: dbLog.sourceChannel,
-      sourceGuild: dbLog.sourceGuild,
-      replyContent: srcMessage.embeds[0]
-    }
+  var logInfo = {
+      type: props.opCode,
+      sourceId: dbWriteData.sourceId,
+      sourceUserId: dbWriteData.sourceUserId,
+      sourceTimestamp: dbWriteData.sourceTimestamp,
+      sourceContent: dbWriteData.sourceContent,
+      sourceChannelId: dbWriteData.sourceChannelId,
+      replyId: dbWriteData.replyId,
+
+      replyContent: replyMessage.embeds[0]
+  }
+  if (!messageObject.isDm)
+    logInfo.sourceGuildId = dbWriteData.sourceGuilId;
+  return logInfo;
   */
 }
 
@@ -114,8 +116,8 @@ function dmHelpMessage(message ,props) {
     sourceUserId: dbLog.sourceUserId,
     sourceTimestamp: dbLog.sourceTimestamp,
     sourceContent: dbLog.sourceContent,
-    sourceChannel: dbLog.sourceChannel,
-    sourceGuild: dbLog.sourceGuild,
+    sourceChannelId: dbLog.sourceChannelId,
+    sourceGuildId: dbLog.sourceGuildId,
     replyContent: adminContent
   };
   */
@@ -154,8 +156,8 @@ function setReaction(messageObject ,props) {
     sourceUserId: dbLog.sourceUserId,
     sourceTimestamp: dbLog.sourceTimestamp,
     sourceContent: dbLog.sourceContent,
-    sourceChannel: dbLog.sourceChannel,
-    sourceGuild: dbLog.sourceGuild,
+    sourceChannelId: dbLog.sourceChannelId,
+    sourceGuildId: dbLog.sourceGuildId,
     replyContent: ""
   }
   */
@@ -193,8 +195,8 @@ function dmModuleStatus(messageObject ,props) {
     sourceUserId: dbLog.sourceUserId,
     sourceTimestamp: dbLog.sourceTimestamp,
     sourceContent: dbLog.sourceContent,
-    sourceChannel: dbLog.sourceChannel,
-    sourceGuild: dbLog.sourceGuild,
+    sourceChannelId: dbLog.sourceChannelId,
+    sourceGuildId: dbLog.sourceGuildId,
     replyContent: statusMsg
   };
   */
@@ -252,8 +254,8 @@ function moduleSwitch(messageObj, props) {
       sourceUserId: dbLog.sourceUserId,
       sourceTimestamp: dbLog.sourceTimestamp,
       sourceContent: dbLog.sourceContent,
-      sourceChannel: dbLog.sourceChannel,
-      sourceGuild: dbLog.sourceGuild,
+      sourceChannelId: dbLog.sourceChannelId,
+      sourceGuildId: dbLog.sourceGuildId,
       replyContent: ""
     }
     */
@@ -299,16 +301,16 @@ async function turnPage(reactionObject, props) {
     sourceId: messageReaction.message.id,
     sourceUserId: messageReaction.users.cache.array().pop().id,
     sourceTimestamp: Date.now(),
-    sourceChannel: messageReaction.message.channel.id
+    sourceChannelId: messageReaction.message.channel.id
   };
   if (isText)
-    logInfo['sourceGuild'] = messageReaction.message.channel.guild.id;
+    logInfo['sourceGuildId'] = messageReaction.message.channel.guild.id;
   */
 }
 
 async function removeEmbedMsg(reactionObject, props) {
   let srcMessage =
-  reactionObject.client.channels.cache.get(reactionObject.cacheData.sourceChannel)
+  reactionObject.client.channels.cache.get(reactionObject.cacheData.sourceChannelId)
   .messages.cache.get(reactionObject.cacheData.sourceId);
   const cacheData = reactionObject.cacheData;
   const isDm = reactionObject.isDm;
@@ -316,9 +318,9 @@ async function removeEmbedMsg(reactionObject, props) {
     srcMessage.suppressEmbeds(false);
   reactionObject.message.delete();
   dbop.deleteCacheDBData(cacheData);
-  var cacheKey = 'cacheMsg_' + cacheData.replyId + '_' + cacheData.sourceChannel;
+  var cacheKey = 'cacheMsg_' + cacheData.replyId + '_' + cacheData.sourceChannelId;
   if (!isDm) {
-    cacheKey += '_' + cacheData.sourceGuild;
+    cacheKey += '_' + cacheData.sourceGuildId;
   }
   dbCache.del(cacheKey);
   /*
@@ -328,10 +330,10 @@ async function removeEmbedMsg(reactionObject, props) {
     sourceUserId: sourceUserId,
     sourceTimestamp: Date.now(),
     sourceContent: message.embeds[0],
-    sourceChannel: message.channel.id
+    sourceChannelId: message.channel.id
   };
   if (isText)
-    logInfo['sourceGuild'] = message.channel.guild.id;
+    logInfo['sourceGuildId'] = message.channel.guild.id;
   */
 }
 
@@ -348,16 +350,16 @@ async function postUrl(messageObject ,props) {
     sourceUserId: messageObject.author.id,
     sourceTimestamp: messageObject.createdTimestamp,
     sourceContent: messageObject.content,
-    sourceChannel: messageObject.channel.id,
+    sourceChannelId: messageObject.channel.id,
     sourceContent: props.urlContent,
     replyId: replyMessage.id,
     pageCount: 1,
     currentPage: 1,
     type: 'Other'
   }
-  var cacheKey = 'cacheMsg_' + dbWriteData.replyId + '_' + dbWriteData.sourceChannel;
+  var cacheKey = 'cacheMsg_' + dbWriteData.replyId + '_' + dbWriteData.sourceChannelId;
   if (messageObject.guild != null) {
-    dbWriteData['sourceGuild'] = messageObject.guild.id;
+    dbWriteData['sourceGuildId'] = messageObject.guild.id;
     cacheKey += '_' + messageObject.guild.id;
   }
   dbop.toCacheDB(dbWriteData);
@@ -371,8 +373,8 @@ async function postUrl(messageObject ,props) {
       sourceUserId: dbLog.sourceUserId,
       sourceTimestamp: dbLog.sourceTimestamp,
       sourceContent: dbLog.sourceContent,
-      sourceChannel: dbLog.sourceChannel,
-      sourceGuild: dbLog.sourceGuild,
+      sourceChannelId: dbLog.sourceChannelId,
+      sourceGuildId: dbLog.sourceGuildId,
       replyContent: srcMessage.embeds[0]
     }
   */
