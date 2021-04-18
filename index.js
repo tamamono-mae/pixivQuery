@@ -2,9 +2,6 @@ const npath = require('path');
 const Discord = require("discord.js");
 const winston = require('winston');
 const config = require("../token/config3.json");
-//const p = require("./pipProc.js");
-//const q = require("./query.js");
-//const a = require("./app.js");
 const arch = require("./architecture.js");
 const cacheDb = require('knex')({
   client: 'sqlite3',
@@ -36,20 +33,36 @@ const logger = winston.createLogger({
 });
 const client = new Discord.Client();
 
+function loggerArray(logArray) {
+  for(var i=0;i<logArray.length;i++){
+    logger.info(logArray[i]);
+    console.log(logArray[i]);
+  }
+}
+
 client.login(config.BOT_TOKEN);
 
 client.on("message", function(srcMessage) {
+  const start = new Date();
   srcMessage.isDm = (srcMessage.channel.type == 'dm');
   srcMessage.isText = (srcMessage.channel.type == 'text');
   srcMessage.isMsgObj = true;
   if (srcMessage.author.bot || !(srcMessage.isDm || srcMessage.isText)) return;
   if (srcMessage.attachments.array().length == 0) {
     arch.setConfig(srcMessage).then(() => {
-      arch.msgRouter(srcMessage);
+      return arch.msgRouter(srcMessage);
+    }).then(logArray => {
+      loggerArray(logArray);
+      const time = new Date() - start;
+      console.log(time);
     });
   } else {
     arch.setConfig(srcMessage).then(() => {
-      arch.attachmentRouter(srcMessage);
+      return arch.attachmentRouter(srcMessage);
+    }).then(logArray => {
+      loggerArray(logArray);
+      const time = new Date() - start;
+      console.log(time);
     });
   }
 });
@@ -62,6 +75,7 @@ client.on('ready', () => {
 
 client.on("messageReactionAdd", (messageReaction) => {
   const start = new Date();
+  messageReaction.rts = start;
   messageReaction.isDm = (messageReaction.message.channel.type == 'dm');
   messageReaction.isText = (messageReaction.message.channel.type == 'text');
   messageReaction.isMsgObj = false;
@@ -77,12 +91,12 @@ client.on("messageReactionAdd", (messageReaction) => {
     arch.setEmbedMsgCache(messageReaction);
     if (messageReaction.cacheData == null) throw null;
   }).then(() => {
-    arch.reactionRouter(messageReaction);
-  }).then(() => {
+    return arch.reactionRouter(messageReaction);
+  }).then(logArray => {
+    loggerArray(logArray);
     const time = new Date() - start;
     console.log(time);
   });
-
 });
 
 client.on("messageDelete", (message) => {

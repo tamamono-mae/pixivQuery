@@ -71,7 +71,6 @@ async function pixivQuery(illustId, currentPage){
   if (webCache.get('pixiv_'+illustId) != null) {
     return webCache.get('pixiv_'+illustId);
   }
-  console.log(illustId);
   let body = await fetch('https://www.pixiv.net/artworks/'+illustId)
   .then(res => res.text());
   let $ = cheerio.load(body);

@@ -49,6 +49,7 @@ async function setConfig(client) {
       [config.defaultDMPermissionBitfield, false],
       config.defaultReaction
     ];
+    client.isMessageManager = false;
   }
   client.guildSwitch = guildSwitch[0];
   client.guildFunctionIsDefault = guildSwitch[1];

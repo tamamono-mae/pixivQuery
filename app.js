@@ -31,11 +31,12 @@ async function postImageInfo(messageObject ,props) {
   if (queryResult == null) throw new Error('meta-data not found!');
   if (messageObject.isMessageManager) messageObject.suppressEmbeds(true);
   //post and get replyMessage first
-  let replyMessage = await messageObject.channel.send(q.query2msg(queryResult, props.website));
+  let replyContent = q.query2msg(queryResult, props.website);
+  let replyMessage = await messageObject.channel.send(replyContent);
   //add reaction in background
   replyMessage.configReaction = messageObject.configReaction;
   fn.addReaction(replyMessage, (queryResult.pageCount > 1));
-  dbWriteData = {
+  var dbWriteData = {
     time: Date.now(),
     sourceId: messageObject.id,
     sourceUserId: messageObject.author.id,
@@ -47,16 +48,6 @@ async function postImageInfo(messageObject ,props) {
     currentPage: 1,
     type: props.website
   }
-  if (props.urlContent != null)
-    dbWriteData.sourceContent = props.urlContent;
-  var cacheKey = 'cacheMsg_' + dbWriteData.replyId + '_' + dbWriteData.sourceChannelId;
-  if (messageObject.guild != null) {
-    dbWriteData['sourceGuildId'] = messageObject.guild.id;
-    cacheKey += '_' + messageObject.guild.id;
-  }
-  dbop.toCacheDB(dbWriteData);
-  dbCache.put(cacheKey, dbWriteData, config.cacheTimeout);
-  /*
   var logInfo = {
       type: props.opCode,
       sourceId: dbWriteData.sourceId,
@@ -65,13 +56,27 @@ async function postImageInfo(messageObject ,props) {
       sourceContent: dbWriteData.sourceContent,
       sourceChannelId: dbWriteData.sourceChannelId,
       replyId: dbWriteData.replyId,
-
-      replyContent: replyMessage.embeds[0]
+      replyContent: replyContent
   }
-  if (!messageObject.isDm)
-    logInfo.sourceGuildId = dbWriteData.sourceGuilId;
-  return logInfo;
-  */
+  if (props.urlContent != null) {
+    dbWriteData.sourceContent = props.urlContent;
+    logInfo.sourceContent = props.urlContent;
+  }
+  var cacheKey = 'cacheMsg_' + dbWriteData.replyId + '_' + dbWriteData.sourceChannelId;
+  if (!messageObject.isDm) {
+    dbWriteData['sourceGuildId'] = messageObject.guild.id;
+    cacheKey += '_' + messageObject.guild.id;
+    logInfo.sourceGuildId = messageObject.guild.id;
+  }
+  dbop.toCacheDB(dbWriteData);
+  dbCache.put(cacheKey, dbWriteData, config.cacheTimeout);
+  switch (props.opCode) {
+    case 'imgSearch':
+    case 'urlSearch':
+      return logInfo;
+    default:
+      return [logInfo];
+  }
 }
 
 function helpMessageAdmin(descriptionAry, moduleName, color, thumbnail) {
@@ -95,9 +100,9 @@ function helpMessageAdmin(descriptionAry, moduleName, color, thumbnail) {
   return helpMsg;
 }
 
-function dmHelpMessage(message ,props) {
+function dmHelpMessage(messageObject ,props) {
   var adminContent = "";
-  if (message.channel.permissionsFor(message.author).has(0x2000)) {
+  if (messageObject.channel.permissionsFor(messageObject.author).has(0x2000)) {
     adminContent =
     helpMessageAdmin(
       props.description,
@@ -105,22 +110,22 @@ function dmHelpMessage(message ,props) {
       props.color,
       props.thumbnail
     );
-    message.author.send(adminContent);
+    messageObject.author.send(adminContent);
   }
   //srcMessage.channel.send(messageContent);
-  if (message.isMessageManager) message.delete();
-  /*
-  return {
-    type:'Help',
-    sourceId: dbLog.sourceId,
-    sourceUserId: dbLog.sourceUserId,
-    sourceTimestamp: dbLog.sourceTimestamp,
-    sourceContent: dbLog.sourceContent,
-    sourceChannelId: dbLog.sourceChannelId,
-    sourceGuildId: dbLog.sourceGuildId,
+  if (messageObject.isMessageManager) messageObject.delete();
+
+  var logInfo = {
+    type: props.opCode,
+    sourceId: messageObject.id,
+    sourceUserId: messageObject.author.id,
+    sourceTimestamp: messageObject.createdTimestamp,
+    sourceContent: messageObject.content,
+    sourceChannelId: messageObject.channel.id,
+    sourceGuildId: messageObject.guild.id,
     replyContent: adminContent
   };
-  */
+  return [logInfo];
 }
 
 function setReaction(messageObject ,props) {
@@ -140,27 +145,17 @@ function setReaction(messageObject ,props) {
     config.deleteMessageDelay
   );
   dbop.toConfigDB(messageObject, writeData);
-  /*
-  p.writeBack(
-    decodedInstruction.opCode,
-    configDb,
-    dbWrite.table,
-    dbWrite.data,
-    srcMessage
-  );
-  */
-  /*
-  return {
-    type:'Config',
-    sourceId: dbLog.sourceId,
-    sourceUserId: dbLog.sourceUserId,
-    sourceTimestamp: dbLog.sourceTimestamp,
-    sourceContent: dbLog.sourceContent,
-    sourceChannelId: dbLog.sourceChannelId,
-    sourceGuildId: dbLog.sourceGuildId,
-    replyContent: ""
-  }
-  */
+  var logInfo = {
+    type: props.opCode,
+    sourceId: messageObject.id,
+    sourceUserId: messageObject.author.id,
+    sourceTimestamp: messageObject.createdTimestamp,
+    sourceContent: messageObject.content,
+    sourceChannelId: messageObject.channel.id,
+    sourceGuildId: messageObject.guild.id
+  };
+  logInfo.operation = 'set ' + props.reaction;
+  return [logInfo];
 }
 
 function dmModuleStatus(messageObject ,props) {
@@ -188,21 +183,21 @@ function dmModuleStatus(messageObject ,props) {
   statusMsg.embed.description = moduleStatus;
   messageObject.author.send(statusMsg);
   messageObject.delete();
-  /*
-  return {
-    type:'Status',
-    sourceId: dbLog.sourceId,
-    sourceUserId: dbLog.sourceUserId,
-    sourceTimestamp: dbLog.sourceTimestamp,
-    sourceContent: dbLog.sourceContent,
-    sourceChannelId: dbLog.sourceChannelId,
-    sourceGuildId: dbLog.sourceGuildId,
+
+  var logInfo = {
+    type: props.opCode,
+    sourceId: messageObject.id,
+    sourceUserId: messageObject.author.id,
+    sourceTimestamp: messageObject.createdTimestamp,
+    sourceContent: messageObject.content,
+    sourceChannelId: messageObject.channel.id,
+    sourceGuildId: messageObject.guild.id,
     replyContent: statusMsg
   };
-  */
+  return [logInfo];
 }
 
-function moduleSwitch(messageObj, props) {
+function moduleSwitch(messageObject, props) {
   //dbLog['type'] = 'Config';
   var check = false;
   //var botModule = objectCheck.content.split(" ")[1];
@@ -214,7 +209,7 @@ function moduleSwitch(messageObj, props) {
   }
   if (!check) {
     fn.replyConfigMessage(
-      messageObj,
+      messageObject,
       'Incorrect module name',
       config.deleteMessageDelay
     );
@@ -222,13 +217,13 @@ function moduleSwitch(messageObj, props) {
   }
   props.isGlobal = (props.isGlobal != null);
   props.operation = (props.operation.match(/enable/i) != null);
-  let functionSwitch = (props.isGlobal) ? messageObj.guildSwitch : messageObj.channelSwitch;
+  let functionSwitch = (props.isGlobal) ? messageObject.guildSwitch : messageObject.channelSwitch;
   if (props.operation ==
     ((
       (functionSwitch >> sd.opProps[props.module]['bit'] & 1)
     ) == 1)) {
       fn.replyConfigMessage(
-        messageObj,
+        messageObject,
         'No modification made',
         config.deleteMessageDelay
       );
@@ -240,25 +235,28 @@ function moduleSwitch(messageObj, props) {
       )
     };
   fn.replyConfigMessage(
-    messageObj,
+    messageObject,
     props.module +
     (props.operation ?
     ' 🇴 🇳' : ' 🇴 🇫 🇫'),
     config.deleteMessageDelay
   );
-  dbop.toConfigDB(messageObj, writeData, props.isGlobal);
-    /*
-    return {
-      type:'Config',
-      sourceId: dbLog.sourceId,
-      sourceUserId: dbLog.sourceUserId,
-      sourceTimestamp: dbLog.sourceTimestamp,
-      sourceContent: dbLog.sourceContent,
-      sourceChannelId: dbLog.sourceChannelId,
-      sourceGuildId: dbLog.sourceGuildId,
-      replyContent: ""
-    }
-    */
+  dbop.toConfigDB(messageObject, writeData, props.isGlobal);
+
+  var logInfo = {
+    type: props.opCode,
+    sourceId: messageObject.id,
+    sourceUserId: messageObject.author.id,
+    sourceTimestamp: messageObject.createdTimestamp,
+    sourceContent: messageObject.content,
+    sourceChannelId: messageObject.channel.id,
+    sourceGuildId: messageObject.guild.id,
+  };
+  logInfo.operation =
+    props.module +
+    (props.operation ? ' enable' : ' disable') +
+    (props.isGlobal ? ' global' : '');
+  return [logInfo];
 }
 
 async function turnPage(reactionObject, props) {
@@ -295,17 +293,18 @@ async function turnPage(reactionObject, props) {
   }
   dbCache.del(cacheKey);
   dbCache.put(cacheKey ,reactionObject.cacheData);
-  /*
-  logInfo = {
-    type: decodedInstruction.data.isNext ? 'Next page' : 'Previous page',
-    sourceId: messageReaction.message.id,
-    sourceUserId: messageReaction.users.cache.array().pop().id,
-    sourceTimestamp: Date.now(),
-    sourceChannelId: messageReaction.message.channel.id
+
+  var logInfo = {
+    type: props.opCode,
+    sourceId: reactionObject.message.id,
+    sourceUserId: reactionObject.reactionCurrentUser,
+    sourceTimestamp: reactionObject.rts,
+    sourceContent: reactionObject.emoji.name,
+    sourceChannelId: reactionObject.message.channel.id,
   };
-  if (isText)
-    logInfo['sourceGuildId'] = messageReaction.message.channel.guild.id;
-  */
+  if (!reactionObject.isDm)
+    logInfo.sourceGuildId = reactionObject.message.guild.id;
+  return [logInfo];
 }
 
 async function removeEmbedMsg(reactionObject, props) {
@@ -316,25 +315,31 @@ async function removeEmbedMsg(reactionObject, props) {
   const isDm = reactionObject.isDm;
   if (srcMessage != null && reactionObject.isMessageManager)
     srcMessage.suppressEmbeds(false);
-  reactionObject.message.delete();
   dbop.deleteCacheDBData(cacheData);
   var cacheKey = 'cacheMsg_' + cacheData.replyId + '_' + cacheData.sourceChannelId;
   if (!isDm) {
     cacheKey += '_' + cacheData.sourceGuildId;
   }
   dbCache.del(cacheKey);
-  /*
-  logInfo = {
-    type:'Delete',
-    sourceId: message.id,
-    sourceUserId: sourceUserId,
-    sourceTimestamp: Date.now(),
-    sourceContent: message.embeds[0],
-    sourceChannelId: message.channel.id
+
+  let rreactionObject = {
+    reactionCurrentUser: reactionObject.reactionCurrentUser,
+    isDm: reactionObject.isDm,
+    rts: reactionObject.rts
+  }
+  let replyMessage = await reactionObject.message.delete();
+
+  var logInfo = {
+    type: props.opCode,
+    sourceId: replyMessage.id,
+    sourceUserId: rreactionObject.reactionCurrentUser,
+    sourceTimestamp: rreactionObject.rts,
+    sourceContent: replyMessage.embeds[0],
+    sourceChannelId: replyMessage.channel.id,
   };
-  if (isText)
-    logInfo['sourceGuildId'] = message.channel.guild.id;
-  */
+  if (!rreactionObject.isDm)
+    logInfo.sourceGuildId = replyMessage.guild.id;
+  return [logInfo];
 }
 
 async function postUrl(messageObject ,props) {
@@ -357,27 +362,25 @@ async function postUrl(messageObject ,props) {
     currentPage: 1,
     type: 'Other'
   }
+  var logInfo = {
+    type: props.opCode,
+    sourceId: dbWriteData.sourceId,
+    sourceUserId: dbWriteData.sourceUserId,
+    sourceTimestamp: dbWriteData.sourceTimestamp,
+    sourceContent: dbWriteData.sourceContent,
+    sourceChannelId: dbWriteData.sourceChannelId,
+    replyId: dbWriteData.replyId,
+    replyContent: replyMessage.content
+  }
   var cacheKey = 'cacheMsg_' + dbWriteData.replyId + '_' + dbWriteData.sourceChannelId;
   if (messageObject.guild != null) {
     dbWriteData['sourceGuildId'] = messageObject.guild.id;
     cacheKey += '_' + messageObject.guild.id;
+    logInfo.sourceGuildId = messageObject.guild.id;
   }
   dbop.toCacheDB(dbWriteData);
   dbCache.put(cacheKey, dbWriteData, config.cacheTimeout);
-  /*
-  return {
-    'dbLog' : dbLog,
-    'logger' : {
-      type:'Query',
-      sourceId: dbLog.sourceId,
-      sourceUserId: dbLog.sourceUserId,
-      sourceTimestamp: dbLog.sourceTimestamp,
-      sourceContent: dbLog.sourceContent,
-      sourceChannelId: dbLog.sourceChannelId,
-      sourceGuildId: dbLog.sourceGuildId,
-      replyContent: srcMessage.embeds[0]
-    }
-  */
+  return logInfo;
 }
 
 function urlSearch(messageObject, props) {
@@ -400,23 +403,28 @@ function urlSearch(messageObject, props) {
   for (var i=0;i<urlPool.length;i++)
     promisePool.push(q.saucenaoSearch(urlPool[i]));
   return Promise.all(promisePool).then(searchResult => {
-    console.log(searchResult);
     var promisePool = [];
+    //Remove duplicates and null from searchResult
+    searchResult = Array.from(new Set(searchResult)).filter(item => item != null);
     for (var i=0;i<searchResult.length;i++) {
-      var props = {};
-      props.urlContent = searchResult[i];
+      var subProps = {
+        opCode: props.opCode,
+        urlContent: searchResult[i]
+      };
       if (fn.urlDump(searchResult[i]) != null) {
-        //修改router list varExt參數與urlDump使中繼資料Tag相同
-        props.uid = fn.urlDump(searchResult[i]).uid;
-        props.website = fn.urlDump(searchResult[i]).website;
-        promisePool.push(postImageInfo(messageObject, props));
+        subProps.uid = fn.urlDump(searchResult[i]).uid;
+        subProps.website = fn.urlDump(searchResult[i]).website;
+        promisePool.push(postImageInfo(messageObject, subProps));
       }
       else {
-        props.urlContent = searchResult[i];
-        promisePool.push(postUrl(messageObject, props));
+        promisePool.push(postUrl(messageObject, subProps));
       }
     }
     return Promise.all(promisePool);
+  }).then(logArray => {
+    if(messageObject != null && props.opCode == 'imgSearch' && messageObject.isMessageManager)
+      messageObject.delete();
+    return logArray;
   });
 }
 
