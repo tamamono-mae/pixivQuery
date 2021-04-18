@@ -3,6 +3,7 @@ const cheerio = require("cheerio");
 const formData = require("form-data");
 const { htmlToText } = require('html-to-text');
 const config = require("../token/config3.json");
+const webCache = require('memory-cache');
 
 async function checkUrls(urlArr) {
   for(var i=0;i<urlArr.length;i++) {
@@ -11,6 +12,16 @@ async function checkUrls(urlArr) {
     if (http_status == 200) return urlArr[i];
   }
   return null;
+}
+
+function mkfd(url) {
+  let formdata = new formData();
+  formdata.append("Content-Type", "application/octect-stream");
+  formdata.append("url", url);
+  formdata.append("frame", "1");
+  formdata.append("hide", "0");
+  formdata.append("database", "999");
+  return formdata;
 }
 
 function saucenaoSearch(url){
@@ -49,30 +60,6 @@ function saucenaoSearch(url){
   })
 }
 
-async function ascii2d(url){
-  var formdata = mkfd(url);
-  let body = await fetch('https://ascii2d.net/search/url/'+url)
-  .then(res => res.text());
-  let $ = cheerio.load(body);
-  var i = ($("div.detail-box.gray-link").eq(0).find("a").eq(0).attr("href") == null) ? 1 : 0;
-  var r;
-  if ($("div.detail-box.gray-link").eq(0+i).find("small").text() == "twitter") r = $("div.detail-box.gray-link").eq(0+i).find("a").eq(0).attr("href");
-  else if ($("div.detail-box.gray-link").eq(1+i).find("small").text() == "twitter") r = $("div.detail-box.gray-link").eq(1+i).find("a").eq(0).attr("href");
-  else r = $("div.detail-box.gray-link").eq(0+i).find("a").eq(0).attr("href");
-  return (r == null) ? ":x: Error" : r ;
-
-}
-
-function mkfd(url) {
-  let formdata = new formData();
-  formdata.append("Content-Type", "application/octect-stream");
-  formdata.append("url", url);
-  formdata.append("frame", "1");
-  formdata.append("hide", "0");
-  formdata.append("database", "999");
-  return formdata;
-}
-
 function imgCount(pageCount,currentPage) {
   if(currentPage <= pageCount && pageCount > 1)
     return '-' + currentPage;
@@ -81,10 +68,14 @@ function imgCount(pageCount,currentPage) {
 
 async function pixivQuery(illustId, currentPage){
   //var formdata = mkfd(url);
+  if (webCache.get('pixiv_'+illustId) != null) {
+    return webCache.get('pixiv_'+illustId);
+  }
+  console.log(illustId);
   let body = await fetch('https://www.pixiv.net/artworks/'+illustId)
   .then(res => res.text());
   let $ = cheerio.load(body);
-  return ($("#meta-preload-data").length > 0) ? {
+  let data = ($("#meta-preload-data").length > 0) ? {
     "title": JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['illustTitle'],
     "description": htmlToText(JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['illustComment'],{
       tags: { 'a': { options: { ignoreHref: true } } },
@@ -101,6 +92,8 @@ async function pixivQuery(illustId, currentPage){
     "xRestrict": JSON.parse($("#meta-preload-data").attr("content"))['illust'][illustId]['xRestrict'],
     "currentPage": currentPage
   } : null;
+  webCache.put('webCache_pixiv_'+data.illustId, data, config.cacheTimeout);
+  return data;
 }
 
 function query2msg(data,type){
@@ -145,4 +138,4 @@ function query2msg(data,type){
   }
 }
 
-module.exports = { saucenaoSearch, ascii2d, mkfd, pixivQuery, query2msg };
+module.exports = { saucenaoSearch, mkfd, pixivQuery, query2msg };
