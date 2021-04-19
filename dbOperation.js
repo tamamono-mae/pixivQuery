@@ -17,19 +17,7 @@ const configDb = require('knex')({
   },
   useNullAsDefault: true
 });
-/*
-function fetchReaction(messageObject) {
-  return configDb(configTables[1])
-  .where('guildId', messageObject.guild.id)
-  .andWhere('channelId', messageObject.channel.id)
-  .select('reaction').then(rows => {
-    if (rows.length > 0) return rows[0]['reaction'];
-    else {
-      return config.defaultReaction;
-    }
-  });
-}
-*/
+
 function fetchCache(messageObject) {
   return cacheDb('cacheMsg')
   .where('sourceChannelId', messageObject.channel.id)

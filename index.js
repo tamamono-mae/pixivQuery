@@ -10,14 +10,6 @@ const cacheDb = require('knex')({
   },
   useNullAsDefault: true
 });
-const configDb = require('knex')({
-  client: 'sqlite3',
-  connection: {
-    filename: config.pathToConfigDb
-  },
-  useNullAsDefault: true
-});
-
 const logger = winston.createLogger({
   level: 'info',
   format: winston.format.json(),
@@ -36,8 +28,25 @@ const client = new Discord.Client();
 function loggerArray(logArray) {
   for(var i=0;i<logArray.length;i++){
     logger.info(logArray[i]);
-    console.log(logArray[i]);
+    //console.log(logArray[i]);
   }
+}
+
+function loggerError(client, e) {
+  logInfo = {
+    error: e.message,
+    sourceId: client.id,
+    sourceUserId: client.author.id,
+    sourceTimestamp: client.createdTimestamp,
+    sourceContent: client.content,
+    sourceChannelId: client.channel.id,
+    guildSwitch: client.guildSwitch,
+    channelSwitch: client.channelSwitch,
+    reaction: client.configReaction
+  }
+  if (!client.isDm)
+    logInfo['sourceGuildId'] = client.guild.id;
+  logger.error(logInfo);
 }
 
 client.login(config.BOT_TOKEN);
@@ -49,12 +58,21 @@ client.on("message", function(srcMessage) {
   srcMessage.isMsgObj = true;
   if (srcMessage.author.bot || !(srcMessage.isDm || srcMessage.isText)) return;
   if (srcMessage.attachments.array().length == 0) {
+    /*// TODO: 
+    help增加reaction顯示
+    pixiv增加tag欄位
+    增加重置設定功能
+    增加Reaction全域設定
+    */
     arch.setConfig(srcMessage).then(() => {
       return arch.msgRouter(srcMessage);
     }).then(logArray => {
       loggerArray(logArray);
       const time = new Date() - start;
       console.log(time);
+    }).catch(e => {
+      console.log(e);
+      loggerError(srcMessage, e);
     });
   } else {
     arch.setConfig(srcMessage).then(() => {
@@ -63,6 +81,9 @@ client.on("message", function(srcMessage) {
       loggerArray(logArray);
       const time = new Date() - start;
       console.log(time);
+    }).catch(e => {
+      console.log(e);
+      loggerError(srcMessage, e);
     });
   }
 });
@@ -94,8 +115,8 @@ client.on("messageReactionAdd", (messageReaction) => {
     return arch.reactionRouter(messageReaction);
   }).then(logArray => {
     loggerArray(logArray);
-    const time = new Date() - start;
-    console.log(time);
+    //const time = new Date() - start;
+    //console.log(time);
   });
 });
 
