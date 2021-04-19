@@ -6,7 +6,7 @@ const dbCache = require('memory-cache');
 
 let switchOrderList = [
   {
-    patt: /^.*\.pixiv\..*\/(?<uid>\d+)/i,
+    patt: /^.*\.pixiv\.net\/(artworks|en\/artworks)\/(?<uid>\d+)/i,
     action: a.postImageInfo,
     varExt: { opCode: "postImageInfo", website: "pixiv" }
   },
@@ -84,6 +84,31 @@ function msgSwitchOrder(client) {
   return returnOrder;
 }
 
+function msgAdminCommandOrder(client) {
+  if (permissionCheckUser(client, 'moduleSwitch', authorId = '0'))
+    return [
+      {
+        patt: new RegExp(`^${config.prefix} setReaction (?<reaction>..)`,'i'),
+        action: a.setReaction,
+        varExt: { opCode: "setReaction" }
+      },
+      {
+        patt: new RegExp(`^${config.prefix} status`,'i'),
+        action: a.dmModuleStatus,
+        varExt: {
+          opCode: "status",
+          color: config.colors[0],
+          thumbnail: config.thumbnail}
+      },
+      {
+        patt: new RegExp(`^${config.prefix} (?<module>.+) (?<operation>enable|disable)(?<isGlobal> global)*`,'i'),
+        action: a.moduleSwitch,
+        varExt: { opCode: "moduleSwitch" }
+      }
+    ];
+  return [];
+}
+
 function permissionCheckBot(client) {
   var messageObject = {};
   if (client.isMsgObj) messageObject = client;
@@ -125,6 +150,7 @@ function msgRouter(messageObj) {
   let message = messageObj.content;
   let route = [
     ...msgSwitchOrder(messageObj),
+    ...msgAdminCommandOrder(messageObj),
     {
       patt: new RegExp(`^${config.prefix} help`,'i'),
       action: a.dmHelpMessage,
@@ -134,25 +160,8 @@ function msgRouter(messageObj) {
         thumbnail: config.thumbnail,
         description: config.commandDescription
       }
-    },
-    {
-      patt: new RegExp(`^${config.prefix} setReaction (?<reaction>..)`,'i'),
-      action: a.setReaction,
-      varExt: { opCode: "setReaction" }
-    },
-    {
-      patt: new RegExp(`^${config.prefix} status`,'i'),
-      action: a.dmModuleStatus,
-      varExt: {
-        opCode: "status",
-        color: config.colors[0],
-        thumbnail: config.thumbnail}
-    },
-    {
-      patt: new RegExp(`^${config.prefix} (?<module>.+) (?<operation>enable|disable)(?<isGlobal> global)*`,'i'),
-      action: a.moduleSwitch,
-      varExt: { opCode: "moduleSwitch" }
     }
+
   ];
   //let matchRoute = route.find((route) => message.match(route.patt));
   for (var i=0;i<route.length;i++) {
