@@ -58,7 +58,7 @@ client.on("message", function(srcMessage) {
   srcMessage.isMsgObj = true;
   if (srcMessage.author.bot || !(srcMessage.isDm || srcMessage.isText)) return;
   if (srcMessage.attachments.array().length == 0) {
-    /*// TODO: 
+    /*// TODO:
     help增加reaction顯示
     pixiv增加tag欄位
     增加重置設定功能

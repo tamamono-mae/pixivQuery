@@ -251,8 +251,10 @@ function reactionRouter(reactionObject) {
     for (var j=0;j<Object.keys(route[i]['varExt']).length;j++) {
       props[Object.keys(route[i]['varExt'])[j]] = Object.values(route[i]['varExt'])[j];
     }
-
-    let checkPermissionResult = permissionCheckUser(reactionObject, currRoute.varExt.opCode);
+    let checkPermissionResult = permissionCheckUser(
+      reactionObject, currRoute.varExt.opCode,
+      reactionObject.cacheData.sourceUserId
+    );
     if (!checkPermissionResult) throw new Error("Permission denied");
     checkPermissionResult = permissionCheckBot(reactionObject);
     if (!checkPermissionResult[0]) throw new Error("Permission of bot denied, exit!");
