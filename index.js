@@ -26,10 +26,11 @@ const logger = winston.createLogger({
 const client = new Discord.Client();
 
 function loggerArray(logArray) {
-  for(var i=0;i<logArray.length;i++){
-    logger.info(logArray[i]);
-    //console.log(logArray[i]);
-  }
+  if (logArray != null)
+    for(var i=0;i<logArray.length;i++){
+      logger.info(logArray[i]);
+      //console.log(logArray[i]);
+    }
 }
 
 function loggerError(client, e) {
