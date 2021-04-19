@@ -25,6 +25,9 @@ function mkfd(url) {
 }
 
 function saucenaoSearch(url){
+  if (webCache.get('sauceSearch_'+url) != null) {
+    return webCache.get('sauceSearch_'+url);
+  }
   var formdata = mkfd(url);
   return fetch('https://saucenao.com/search.php',
   {
@@ -56,7 +59,9 @@ function saucenaoSearch(url){
     return results;
   })
   .then(results => {
-    return (results.length > 0) ? checkUrls(results) : null ;
+    let data = (results.length > 0) ? checkUrls(results) : null;
+    webCache.put('sauceSearch_'+url, data, config.cacheTimeout);
+    return data;
   })
 }
 
