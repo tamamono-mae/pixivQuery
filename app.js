@@ -406,6 +406,7 @@ function urlSearch(messageObject, props) {
     var promisePool = [];
     //Remove duplicates and null from searchResult
     searchResult = Array.from(new Set(searchResult)).filter(item => item != null);
+    if (searchResult.length == 0) throw new Error('No result');
     for (var i=0;i<searchResult.length;i++) {
       var subProps = {
         opCode: props.opCode,
