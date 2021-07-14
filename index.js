@@ -1,7 +1,7 @@
 const npath = require('path');
 const Discord = require("discord.js");
 const winston = require('winston');
-const config = require("../token/config3.json");
+const config = require("../token/config5.json");
 const arch = require("./architecture.js");
 const cacheDb = require('knex')({
   client: 'sqlite3',

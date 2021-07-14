@@ -2,7 +2,7 @@ const fetch = require("node-fetch");
 const cheerio = require("cheerio");
 const formData = require("form-data");
 const { htmlToText } = require('html-to-text');
-const config = require("../token/config3.json");
+const config = require("../token/config2.json");
 const webCache = require('memory-cache');
 
 async function checkUrls(urlArr) {

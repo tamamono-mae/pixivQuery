@@ -12,7 +12,7 @@ moduleSwitch
 turnPage
 deleteEmbed
 */
-const config = require("../token/config3.json");
+const config = require("../token/config2.json");
 const sd = require("./shareData.js");
 const dbop = require("./dbOperation.js");
 const fn = require("./fn.js");
@@ -29,9 +29,16 @@ async function postImageInfo(messageObject ,props) {
       queryResult = null;
   }
   if (queryResult == null) throw new Error('meta-data not found!');
-  if (messageObject.isMessageManager) messageObject.suppressEmbeds(true);
+  if (messageObject.isMessageManager && !messageObject.deleted) {
+    messageObject = await messageObject.delete();
+  }
+  //if (messageObject.isMessageManager) messageObject.suppressEmbeds(true);
+  //Discord disable this function for bot.           ^^^^^^^^^^^^^^^
   //post and get replyMessage first
   let replyContent = q.query2msg(queryResult, props.website);
+  replyContent["content"] =
+  "This message was posted by\n" +
+  messageObject.author.username + " (" + messageObject.author.id + ").";
   let replyMessage = await messageObject.channel.send(replyContent);
   //add reaction in background
   replyMessage.configReaction = messageObject.configReaction;
@@ -313,8 +320,10 @@ async function removeEmbedMsg(reactionObject, props) {
   .messages.cache.get(reactionObject.cacheData.sourceId);
   const cacheData = reactionObject.cacheData;
   const isDm = reactionObject.isDm;
+  /*
   if (srcMessage != null && reactionObject.isMessageManager)
     srcMessage.suppressEmbeds(false);
+  */
   dbop.deleteCacheDBData(cacheData);
   var cacheKey = 'cacheMsg_' + cacheData.replyId + '_' + cacheData.sourceChannelId;
   if (!isDm) {
@@ -343,8 +352,13 @@ async function removeEmbedMsg(reactionObject, props) {
 }
 
 async function postUrl(messageObject ,props) {
-  if (messageObject.isMessageManager) messageObject.suppressEmbeds(true);
+  //if (messageObject.isMessageManager) messageObject.suppressEmbeds(true);
   //post and get replyMessage first
+  props.urlContent =
+  "This message was posted by\n" +
+  messageObject.author.username +
+  " (" + messageObject.author.id + ").\n" +
+  props.urlContent;
   let replyMessage = await messageObject.channel.send(props.urlContent);
   //add reaction in background
   replyMessage.configReaction = messageObject.configReaction;
@@ -423,7 +437,11 @@ function urlSearch(messageObject, props) {
     }
     return Promise.all(promisePool);
   }).then(logArray => {
+    /*
     if(messageObject != null && props.opCode == 'imgSearch' && messageObject.isMessageManager)
+      messageObject.delete();
+    */
+    if(messageObject != null && !messageObject.deleted && messageObject.isMessageManager)
       messageObject.delete();
     return logArray;
   });

@@ -1,5 +1,5 @@
 
-const config = require("../token/config3.json");
+const config = require("../token/config2.json");
 const configTables = ['guildFunction', 'channelFunction'];
 const cacheTables = ['cacheMsg'];
 

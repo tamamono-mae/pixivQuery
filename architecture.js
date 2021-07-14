@@ -1,4 +1,4 @@
-const config = require("../token/config3.json");
+const config = require("../token/config2.json");
 const a = require("./app.js");
 const sd = require("./shareData.js");
 const dbop = require("./dbOperation.js");
