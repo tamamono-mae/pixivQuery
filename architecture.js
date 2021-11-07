@@ -63,7 +63,7 @@ function attachmentSwitchOrder(client) {
   var returnOrder = [];
   let item = {
     action: a.urlSearch,
-    varExt: { opCode: "imgSearch" , urls: client.attachments.array() }
+    varExt: { opCode: "imgSearch" , urls: Array.from(client.attachments.values()) }
   }
   let numOfBit = sd.opProps[item.varExt.opCode]['bit'];
   let isOn = ( (functionSwitch >> numOfBit) & 1 ) == 1;
@@ -115,9 +115,9 @@ function permissionCheckBot(client) {
   else messageObject = client.message;
   return [
     //sendMessage
-    messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(0x4800),
+    messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(412384349248n),
     //manageMessage
-    messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(0x2000)
+    messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(534790925376n)
   ]
 }
 
@@ -194,7 +194,7 @@ function msgRouter(messageObj) {
 }
 
 function attachmentRouter(messageObj) {
-  let attachments = messageObj.attachments.array();
+  let attachments = Array.from(messageObj.attachments.values());
   let route = [
     ...attachmentSwitchOrder(messageObj)
   ];

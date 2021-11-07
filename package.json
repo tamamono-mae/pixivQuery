@@ -1,13 +1,31 @@
 {
+  "name": "pixivquery",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tamamono-mae/pixivQuery.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tamamono-mae/pixivQuery/issues"
+  },
+  "homepage": "https://github.com/tamamono-mae/pixivQuery#readme",
   "dependencies": {
-    "cheerio": "*",
-    "discord.js": "^12.5.1",
+    "@discordjs/rest": "^0.1.0-canary.0",
+    "cheerio": "^1.0.0-rc.10",
+    "discord-api-types": "^0.24.0",
+    "discord.js": "^13.3.1",
     "form-data": "^4.0.0",
-    "html-to-text": "^7.0.0",
-    "knex": "^0.95.4",
+    "html-to-text": "^8.0.0",
+    "knex": "^0.95.13",
     "memory-cache": "^0.2.0",
-    "node-fetch": "^2.6.1",
-    "node-tesseract-ocr": "^2.2.1",
+    "node-fetch": "^2.6.6",
     "sqlite3": "^5.0.2",
     "winston": "^3.3.3"
   }

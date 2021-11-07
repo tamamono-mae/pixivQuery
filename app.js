@@ -18,6 +18,8 @@ const dbop = require("./dbOperation.js");
 const fn = require("./fn.js");
 const q = require("./query.js");
 const dbCache = require('memory-cache');
+const fetch = require("node-fetch");
+const formData = require("form-data");
 
 async function postImageInfo(messageObject ,props) {
   var queryResult;
@@ -36,6 +38,41 @@ async function postImageInfo(messageObject ,props) {
   //Discord disable this function for bot.           ^^^^^^^^^^^^^^^
   //post and get replyMessage first
   let replyContent = q.query2msg(queryResult, props.website);
+  /* Remove Cache
+  const imgCacheKey = 'cache.'+encodeURIComponent(replyContent.embed.image.url);
+  if (!dbCache.get(imgCacheKey)) {
+    console.log('Caching ' + replyContent.embed.image.url);
+    //let body = await fetch(replyContent.embed.image.url);
+    //console.log(messageObject.client);
+    //const cacheChannel = messageObject.client.channels.cache;
+    //console.log(cacheChannel);
+    //let cachedImg = await messageObject.client.channels.cache.get(config.workingSpaceChannelId).send(replyContent.embed.image.url);
+
+    var cacheImgHeaders = {
+      'Authorization': 'Bearer ' + config.imgurBearer
+    };
+
+    var cacheImgformdata = new formData();
+    cacheImgformdata.append("image", replyContent.embed.image.url);
+    cacheImgformdata.append("album", config.imgurAlbum);
+    cacheImgformdata.append("type", "url");
+
+    var requestOptions = {
+      method: 'POST',
+      headers: cacheImgHeaders,
+      body: cacheImgformdata,
+      redirect: 'follow'
+    };
+
+    const resJson = await fetch("https://api.imgur.com/3/upload", requestOptions)
+      .then(response => response.json())
+      .catch(error => console.log('error', error));
+
+    console.log('Cached');
+    dbCache.put(imgCacheKey, resJson.data.link);
+  }
+  replyContent.embed.image.url = dbCache.get(imgCacheKey);
+  */
   replyContent["content"] =
   "This message was posted by\n" +
   messageObject.author.username + " (" + messageObject.author.id + ").";
@@ -87,29 +124,28 @@ async function postImageInfo(messageObject ,props) {
 }
 
 function helpMessageAdmin(descriptionAry, moduleName, color, thumbnail) {
-  var helpMsg = {
-    "embed": {
+  helpMsg = {
     "title": "Manager commands",
     "description": "",
     "color": 0,
     "thumbnail": {
       "url": ""
     }
-  }};
+  };
   var modules = "";
   moduleName.forEach(item => {
     modules += "> `" + item + "`\n";
   });
-  helpMsg.embed.description =
+  helpMsg.description =
   descriptionAry[0] + modules + descriptionAry[1];
-  helpMsg.embed.color = color;
-  helpMsg.embed.thumbnail.url = thumbnail;
-  return helpMsg;
+  helpMsg.color = color;
+  helpMsg.thumbnail.url = thumbnail;
+  return { embeds: [helpMsg] };
 }
 
 function dmHelpMessage(messageObject ,props) {
   var adminContent = "";
-  if (messageObject.channel.permissionsFor(messageObject.author).has(0x2000)) {
+  if (messageObject.channel.permissionsFor(messageObject.author).has(8192n)) {
     adminContent =
     helpMessageAdmin(
       props.description,
@@ -166,6 +202,7 @@ function setReaction(messageObject ,props) {
 }
 
 function dmModuleStatus(messageObject ,props) {
+  /*
   var statusMsg = {
     "embed": {
     "title": "Status for modules in ",
@@ -175,8 +212,17 @@ function dmModuleStatus(messageObject ,props) {
       "url": props.thumbnail
     }
   }};
+  */
+  var statusEmbed = {
+    "title": "Status for modules in ",
+    "description": "",
+    "color": props.color,
+    "thumbnail": {
+        "url": props.thumbnail
+      }
+  };
   var moduleStatus = "🇬 🇨\n";
-  statusMsg.embed.title +=
+  statusEmbed.title +=
   messageObject.guild.name + ' and ' + messageObject.channel.name;
   var [guildSwitch , channelSwitch] = [messageObject.guildSwitch , messageObject.channelSwitch];
   for(var i=0;i<sd.moduleName.length;i++) {
@@ -187,9 +233,10 @@ function dmModuleStatus(messageObject ,props) {
     guildSwitch = guildSwitch >> 1 ;
     channelSwitch = channelSwitch >> 1 ;
   }
-  statusMsg.embed.description = moduleStatus;
-  messageObject.author.send(statusMsg);
-  messageObject.delete();
+  statusEmbed.description = moduleStatus;
+  messageObject.author.send({ embeds: [statusEmbed] });
+  //====================== Change text command to slash command, reply ephemeral: true
+  //messageObject.delete();
 
   var logInfo = {
     type: props.opCode,
@@ -199,7 +246,7 @@ function dmModuleStatus(messageObject ,props) {
     sourceContent: messageObject.content,
     sourceChannelId: messageObject.channel.id,
     sourceGuildId: messageObject.guild.id,
-    replyContent: statusMsg
+    replyContent: statusEmbed
   };
   return [logInfo];
 }

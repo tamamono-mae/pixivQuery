@@ -1,8 +1,74 @@
 const npath = require('path');
-const Discord = require("discord.js");
+//const Discord = require("discord.js");
+//Discord.js new method
+const { REST } = require('@discordjs/rest');
+const { Routes } = require('discord-api-types/v9');
+//Tempory
+const { SlashCommandBuilder } = require('@discordjs/builders');
+//
 const winston = require('winston');
-const config = require("../token/config5.json");
+const config = require("../token/config2.json");
 const arch = require("./architecture.js");
+//Discord command add
+const cmd1 = new SlashCommandBuilder()
+	.setName('gif')
+	.setDescription('Sends a random gif!')
+	.addStringOption(option =>
+		option.setName('category')
+			.setDescription('The gif category')
+			.setRequired(true)
+			.addChoice('Funny', 'gif_funny')
+			.addChoice('Meme', 'gif_meme')
+			.addChoice('Movie', 'gif_movie'));
+const cmd2 = {
+  options: [{
+    name: 'category',
+    description: 'The gif category',
+    required: true,
+    type: 3,
+    choices: [
+      { name: 'Funny', value: 'gif_funny' },
+      { name: 'Meme', value: 'gif_meme' },
+      { name: 'Movie', value: 'gif_movie' }
+    ]
+  }],
+  name: 'gif2',
+  description: 'Sends a random gif!',
+  defaultPermission: undefined
+}
+
+const rest = new REST({ version: '9' }).setToken(config.BOT_TOKEN);
+const commands = [{
+  name: 'ping',
+  description: 'Replies with Pong!'
+}, cmd1, cmd2];
+console.log(cmd1.options[0].choices);
+(async () => {
+  try {
+    console.log('Started refreshing application (/) commands.');
+
+    await rest.put(
+      Routes.applicationGuildCommands(config.userID, 717423082142433400),
+      { body: commands },
+    );
+
+    console.log('Successfully reloaded application (/) commands.');
+  } catch (error) {
+    console.error(error);
+  }
+})();
+//Discord command add end
+//Discordjs fix
+const { Client, Intents } = require('discord.js');
+const client = new Client({
+	intents: [
+		Intents.FLAGS.GUILDS,
+		Intents.FLAGS.GUILD_MESSAGES,
+		Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+		Intents.FLAGS.DIRECT_MESSAGES
+	]
+});
+//Discordjs fix end
 const cacheDb = require('knex')({
   client: 'sqlite3',
   connection: {
@@ -23,7 +89,7 @@ const logger = winston.createLogger({
     new winston.transports.File({ filename: npath.join(__dirname, config.pathToLog) })
   ],
 });
-const client = new Discord.Client();
+//const client = new Discord.Client();
 
 function loggerArray(logArray) {
   if (logArray != null)
@@ -52,13 +118,66 @@ function loggerError(client, e) {
 
 client.login(config.BOT_TOKEN);
 
-client.on("message", function(srcMessage) {
+client.on('interactionCreate', async interaction => {
+  const start = new Date();
+  interaction.isDm = (interaction.channel.type == 'dm');
+  interaction.isText = (
+    (interaction.channel.type == 'GUILD_TEXT') ||
+    (interaction.channel.type == 'GUILD_PUBLIC_THREAD') ||
+    (interaction.channel.type == 'GUILD_PRIVATE_THREAD')
+  );
+  interaction.isMsgObj = true;
+  //console.log(interaction.channel);
+  if (interaction.user.bot || !(interaction.isDm || interaction.isText)) return;
+  if (!interaction.isCommand()) return;
+
+  //
+  arch.setConfig(interaction).then(() => console.log(interaction));
+
+  /*
+  arch.setConfig(srcMessage).then(() => {
+    return arch.msgRouter(srcMessage);
+  }).then(logArray => {
+    loggerArray(logArray);
+    const time = new Date() - start;
+    console.log(time);
+  }).catch(e => {
+    console.log(e);
+    loggerError(srcMessage, e);
+  });
+  */
+
+  //console.log(interaction);
+  if (interaction.commandName === 'ping') {
+    await interaction.reply( {content: 'Pong!', ephemeral: true });
+		/*
+    console.log(await interaction.reply({ content: 'Pong!', fetchReply: true })
+    .then((message) => message.interaction.deleteReply()));
+    await interaction.reply('.');
+    await interaction.deleteReply();
+    // defer == thinking
+
+    await interaction.deferReply({ ephemeral: true })
+    .then(console.log);
+
+    await interaction.followUp('test');
+		*/
+
+  }
+
+});
+
+client.on("messageCreate", function(srcMessage) {
   const start = new Date();
   srcMessage.isDm = (srcMessage.channel.type == 'dm');
-  srcMessage.isText = (srcMessage.channel.type == 'text');
+  srcMessage.isText = (
+    (srcMessage.channel.type == 'GUILD_TEXT') ||
+    (srcMessage.channel.type == 'GUILD_PUBLIC_THREAD') ||
+    (srcMessage.channel.type == 'GUILD_PRIVATE_THREAD')
+  );
   srcMessage.isMsgObj = true;
   if (srcMessage.author.bot || !(srcMessage.isDm || srcMessage.isText)) return;
-  if (srcMessage.attachments.array().length == 0) {
+  if (Array.from(srcMessage.attachments.values()).length == 0) {
     /*// TODO:
     help增加reaction顯示
     pixiv增加tag欄位
@@ -90,6 +209,7 @@ client.on("message", function(srcMessage) {
 });
 
 client.on('ready', () => {
+  console.log(`[ info ] Logged in as ${client.user.tag}!`);
   setInterval(( () => {
     cacheDb('cacheMsg').where('sourceTimestamp', '<', Date.now()-86400000).del().then(()=>{});
   } ), 600000);
@@ -103,8 +223,7 @@ client.on("messageReactionAdd", (messageReaction) => {
   messageReaction.isMsgObj = false;
   messageReaction.client = client;
   if (messageReaction.message.author.id != client.user.id) return;
-
-  messageReaction.reactionCurrentUser = messageReaction.users.cache.array();
+  messageReaction.reactionCurrentUser = Array.from(messageReaction.users.cache.values());
   messageReaction.reactionCurrentUser = messageReaction.reactionCurrentUser.pop();
 
   if (messageReaction.reactionCurrentUser.bot) return;
