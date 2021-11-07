@@ -1,48 +1,14 @@
 const npath = require('path');
 //const Discord = require("discord.js");
 //Discord.js new method
-const { REST } = require('@discordjs/rest');
-const { Routes } = require('discord-api-types/v9');
-//Tempory
-const { SlashCommandBuilder } = require('@discordjs/builders');
-//
+//const { Routes } = require('discord-api-types/v9');
 const winston = require('winston');
 const config = require("../token/config2.json");
 const arch = require("./architecture.js");
+const initCmdAll = require("./app.js").initCmdAll;
 //Discord command add
-const cmd1 = new SlashCommandBuilder()
-	.setName('gif')
-	.setDescription('Sends a random gif!')
-	.addStringOption(option =>
-		option.setName('category')
-			.setDescription('The gif category')
-			.setRequired(true)
-			.addChoice('Funny', 'gif_funny')
-			.addChoice('Meme', 'gif_meme')
-			.addChoice('Movie', 'gif_movie'));
-const cmd2 = {
-  options: [{
-    name: 'category',
-    description: 'The gif category',
-    required: true,
-    type: 3,
-    choices: [
-      { name: 'Funny', value: 'gif_funny' },
-      { name: 'Meme', value: 'gif_meme' },
-      { name: 'Movie', value: 'gif_movie' }
-    ]
-  }],
-  name: 'gif2',
-  description: 'Sends a random gif!',
-  defaultPermission: undefined
-}
 
-const rest = new REST({ version: '9' }).setToken(config.BOT_TOKEN);
-const commands = [{
-  name: 'ping',
-  description: 'Replies with Pong!'
-}, cmd1, cmd2];
-console.log(cmd1.options[0].choices);
+/*
 (async () => {
   try {
     console.log('Started refreshing application (/) commands.');
@@ -57,6 +23,7 @@ console.log(cmd1.options[0].choices);
     console.error(error);
   }
 })();
+*/
 //Discord command add end
 //Discordjs fix
 const { Client, Intents } = require('discord.js');
@@ -210,6 +177,7 @@ client.on("messageCreate", function(srcMessage) {
 
 client.on('ready', () => {
   console.log(`[ info ] Logged in as ${client.user.tag}!`);
+	initCmdAll(client);
   setInterval(( () => {
     cacheDb('cacheMsg').where('sourceTimestamp', '<', Date.now()-86400000).del().then(()=>{});
   } ), 600000);

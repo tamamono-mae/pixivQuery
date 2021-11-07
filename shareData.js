@@ -18,8 +18,62 @@ let opProps = {
   // 1 1 1 1 1
 }
 
+let commands = [
+  {
+    name: 'help',
+    description: 'Show all available commands.',
+    defaultPermission: undefined
+  },
+  {
+    name: 'status',
+    description: 'Show configuration of current channal and guild.',
+    defaultPermission: undefined
+  },
+  {
+    options: [
+      {
+        name: 'name',
+        description: 'Function name',
+        required: true,
+        type: 3,
+        choices: [
+          { name: 'Get image infos', value: 'getImageInfos' },
+          { name: 'Image search', value: 'imgSearch' },
+          { name: 'URL search', value: 'urlSearch' }
+        ]
+      },
+      {
+        name: 'enable',
+        description: 'Enable or disable',
+        required: true,
+        type: 5
+      },
+      {
+        name: 'globally',
+        description: 'Operation globally or not.',
+        required: true,
+        type: 5
+      },
+    ],
+    name: 'fn',
+    description: 'Turn on or close a function.',
+    defaultPermission: undefined
+  },
+  {
+    options: [{
+      name: 'reaction',
+      description: 'The gif category',
+      required: true,
+      type: 3
+    }],
+    name: 'set-reaction',
+    description: 'Assign a reaction to result.',
+    defaultPermission: undefined
+  }
+]
+
 let moduleName = [
   "getImageInfos", "urlSearch", "imgSearch"
 ]
 
-module.exports = { opProps, moduleName };
+module.exports = { opProps, moduleName, commands };

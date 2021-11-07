@@ -20,6 +20,8 @@ const q = require("./query.js");
 const dbCache = require('memory-cache');
 const fetch = require("node-fetch");
 const formData = require("form-data");
+const { Routes } = require('discord-api-types/v9');
+const { REST } = require('@discordjs/rest');
 
 async function postImageInfo(messageObject ,props) {
   var queryResult;
@@ -494,6 +496,35 @@ function urlSearch(messageObject, props) {
   });
 }
 
+async function initCmd(rest, userID, guildsHandling, commands) {
+  try {
+    await rest.put(
+      Routes.applicationGuildCommands(userID, guildsHandling),
+      { body: commands }
+    );
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function initCmdAll(client) {
+  const rest = new REST({ version: '9' }).setToken(config.BOT_TOKEN);
+  const commands = require("./shareData.js").commands;
+  let guildsHandling = Array.from(client.guilds.cache.keys());
+  //Initilize commands
+  console.log(`[ info ] Initilize commands ...`);
+  var promisePool = [];
+  //Make a task array for multi-tasking.
+  for (var i=0; i<guildsHandling.length; i++) {
+    promisePool.push(
+      initCmd(rest, client.user.id, guildsHandling[i], commands)
+    );
+  }
+  //Launch tasks.
+  await Promise.all(promisePool);
+  console.log(`[ info ] Initilize commands finished.`);
+}
+
 module.exports = {
   postImageInfo,
   dmHelpMessage,
@@ -502,5 +533,6 @@ module.exports = {
   moduleSwitch,
   turnPage,
   removeEmbedMsg,
-  urlSearch
+  urlSearch,
+  initCmdAll
 };
