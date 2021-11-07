@@ -6,25 +6,7 @@ const winston = require('winston');
 const config = require("../token/config2.json");
 const arch = require("./architecture.js");
 const initCmdAll = require("./app.js").initCmdAll;
-//Discord command add
 
-/*
-(async () => {
-  try {
-    console.log('Started refreshing application (/) commands.');
-
-    await rest.put(
-      Routes.applicationGuildCommands(config.userID, 717423082142433400),
-      { body: commands },
-    );
-
-    console.log('Successfully reloaded application (/) commands.');
-  } catch (error) {
-    console.error(error);
-  }
-})();
-*/
-//Discord command add end
 //Discordjs fix
 const { Client, Intents } = require('discord.js');
 const client = new Client({

@@ -1,17 +1,3 @@
-/*
-saucenaoSearch
-pixivQuery
-generateEmbed
-
-help
-urlSearch
-setReaction
-status
-moduleSwitch
-
-turnPage
-deleteEmbed
-*/
 const config = require("../token/config2.json");
 const sd = require("./shareData.js");
 const dbop = require("./dbOperation.js");
