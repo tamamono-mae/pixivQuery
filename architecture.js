@@ -4,6 +4,7 @@ const a = require("./app.js");
 const sd = require("./shareData.js");
 const dbop = require("./dbOperation.js");
 const dbCache = require('memory-cache');
+const checkParameterUndfeind = require('./fn.js').checkParameterUndfeind;
 
 let switchOrderList = [
   {
@@ -85,6 +86,35 @@ function msgSwitchOrder(client) {
   return returnOrder;
 }
 
+function adminCommandSwitchOrder(interaction) {
+  if (permissionCheckUser(interaction, 'moduleSwitch', authorId = '0'))
+    return [
+      {
+        cmd: 'set-reaction',
+        action: a.setReaction,
+        varKey: [ 'reaction' ],
+        varExt: { opCode: "setReaction" }
+      },
+      {
+        cmd: 'status',
+        action: a.dmModuleStatus,
+        varKey: [],
+        varExt: {
+          opCode: "status",
+          color: config.colors[0],
+          thumbnail: config.thumbnail
+        }
+      },
+      {
+        cmd: 'fn',
+        action: a.moduleSwitch,
+        varKey: [],
+        varExt: { opCode: "functionSwitch" }
+      }
+    ];
+  return [];
+}
+
 function msgAdminCommandOrder(client) {
   if (permissionCheckUser(client, 'moduleSwitch', authorId = '0'))
     return [
@@ -112,8 +142,18 @@ function msgAdminCommandOrder(client) {
 
 function permissionCheckBot(client) {
   var messageObject = {};
-  if (client.isMsgObj) messageObject = client;
-  else messageObject = client.message;
+  switch(client.objType) {
+    case 'message':
+      messageObject = client;
+    break;
+    case 'commandInteraction':
+      messageObject = client;
+    break;
+    case 'reaction':
+      messageObject = client.message;
+    break;
+  }
+
   return [
     //sendMessage
     messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(sd.permission.botSendMessage),
@@ -125,19 +165,28 @@ function permissionCheckBot(client) {
 function permissionCheckUser(client, opCode, authorId = '0') {
   var p;
   if (!client.isDm) {
-    if (client.isMsgObj) {
-      p = ((client.channel.guild.ownerID == client.author.id ? 0x10:0)
-        | (client.channel.permissionsFor(client.author).has(sd.permission.userManageMassage) ? 0x8:0)
-        | (client.author.id == authorId ? 0x4:0)
-        | 0x3) & sd.opProps[opCode]['perm'];
-    } else {
-      p = ((client.message.channel.guild.ownerID == client.reactionCurrentUser.id ? 0x10:0)
-        | (client.message.channel.permissionsFor(client.reactionCurrentUser).has(sd.permission.userManageMassage) ? 0x8:0)
-        | (client.users.cache.has(authorId) ? 0x4:0)
-        | 0x3) & sd.opProps[opCode]['perm'];
+    switch(client.objType) {
+      case 'message':
+        p = ((client.channel.guild.ownerID == client.author.id ? 0x10:0)
+          | (client.channel.permissionsFor(client.author).has(sd.permission.userManageMassage) ? 0x8:0)
+          | (client.author.id == authorId ? 0x4:0)
+          | 0x3) & sd.opProps[opCode]['perm'];
+      break;
+      case 'commandInteraction':
+        p = ((client.channel.guild.ownerID == client.user.id ? 0x10:0)
+          | (client.channel.permissionsFor(client.user).has(sd.permission.userManageMassage) ? 0x8:0)
+          | (client.user.id == authorId ? 0x4:0)
+          | 0x3) & sd.opProps[opCode]['perm'];
+      break;
+      case 'reaction':
+        p = ((client.message.channel.guild.ownerID == client.reactionCurrentUser.id ? 0x10:0)
+          | (client.message.channel.permissionsFor(client.reactionCurrentUser).has(sd.permission.userManageMassage) ? 0x8:0)
+          | (client.users.cache.has(authorId) ? 0x4:0)
+          | 0x3) & sd.opProps[opCode]['perm'];
+      break;
     }
   } else {
-    p = (client.isMsgObj ? 0x1 : 0x5) & sd.opProps[opCode]['perm'];
+    p = ((client.objType == 'message') ? 0x1 : 0x5) & sd.opProps[opCode]['perm'];
   }
 
   let r = 0;
@@ -145,6 +194,58 @@ function permissionCheckUser(client, opCode, authorId = '0') {
     r = ((p >> i) & 1) | r;
   }
   return (r == 1);
+}
+
+function cmdRouter(interaction) {
+  let route = [
+    //...commonCommandSwitchOrder(interaction),
+    ...adminCommandSwitchOrder(interaction),
+    {
+      cmd: 'help',
+      action: a.helpMessage,
+      varExt: {
+        opCode: "help",
+        color: config.colors[1],
+        thumbnail: config.thumbnail,
+        description: config.commandDescription
+      }
+    }
+  ];
+  for (var i=0;i<route.length;i++) {
+    //Match command
+    let currRoute = route[i];
+    if (route[i].cmd != interaction.commandName) continue;
+    //Pre-process
+    var props = {};
+    for (var j=0;j<Object.keys(route[i]['varExt']).length;j++) {
+      props[Object.keys(route[i]['varExt'])[j]] = Object.values(route[i]['varExt'])[j];
+    }
+    //Check permission
+    let checkPermissionResult = permissionCheckUser(interaction, currRoute.varExt.opCode);
+    if (!checkPermissionResult) throw new Error("[ warn ] Permission denied.");
+    checkPermissionResult = permissionCheckBot(interaction);
+    if (!checkPermissionResult[0]) throw new Error("[ warn ] Permission of bot denied, exit!");
+    //Check parameter exist
+    var parameterUndfeind = checkParameterUndfeind(interaction, route[i].varKey);
+    if(parameterUndfeind.length > 0) {
+      var j;
+      var errorString = '[ ERR  ] Parameter not found ! ';
+      for(j=0; j< (parameterUndfeind.length -1) ; j++) {
+        errorString += parameterUndfeind[j] + ', ';
+      }
+      errorString += parameterUndfeind[++j];
+      throw new Error(errorString);
+    }
+    //pre-process 2
+    interaction.isMessageManager = checkPermissionResult[1];
+    /*
+    if (match.middleware) {
+      match.middleware(client);
+    }
+    */
+    //Start action
+    return currRoute.action(interaction, props);
+  }
 }
 
 function msgRouter(messageObj) {
@@ -272,6 +373,7 @@ module.exports = {
   setEmbedMsgCache,
   setConfig,
   msgRouter,
+  cmdRouter,
   attachmentRouter,
   reactionRouter
 };

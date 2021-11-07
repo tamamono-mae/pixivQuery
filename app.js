@@ -129,6 +129,10 @@ function helpMessageAdmin(descriptionAry, moduleName, color, thumbnail) {
   return { embeds: [helpMsg] };
 }
 
+function helpMessage(interaction ,props) {
+
+}
+
 function dmHelpMessage(messageObject ,props) {
   var adminContent = "";
   if (messageObject.channel.permissionsFor(messageObject.author).has(8192n)) {
@@ -157,31 +161,31 @@ function dmHelpMessage(messageObject ,props) {
   return [logInfo];
 }
 
-function setReaction(messageObject ,props) {
+function setReaction(interaction, props) {
   //dbLog['type'] = 'Config';
-  if (props.reaction == messageObject.configReaction) {
-    fn.replyConfigMessage(
-      messageObject,
-      'No modification made',
-      config.deleteMessageDelay
-    );
+  //Process setting while checking passed.
+  props.reaction = interaction.options.get('reaction').value;
+  if (props.reaction == interaction.configReaction) {
+    interaction.reply({
+      content: 'No modification made',
+      ephemeral: true
+    });
     throw new Error('[ info ] No modification made');
   }
   let writeData = { "reaction" : props.reaction };
-  fn.replyConfigMessage(
-    messageObject,
-    props.reaction,
-    config.deleteMessageDelay
-  );
-  dbop.toConfigDB(messageObject, writeData);
+  interaction.reply({
+    content: props.reaction,
+    ephemeral: true
+  });
+  dbop.toConfigDB(interaction, writeData);
   var logInfo = {
     type: props.opCode,
-    sourceId: messageObject.id,
-    sourceUserId: messageObject.author.id,
-    sourceTimestamp: messageObject.createdTimestamp,
-    sourceContent: messageObject.content,
-    sourceChannelId: messageObject.channel.id,
-    sourceGuildId: messageObject.guild.id
+    sourceId: interaction.id,
+    sourceUserId: interaction.user.id,
+    sourceTimestamp: interaction.createdTimestamp,
+    sourceContent: interaction.commandName,
+    sourceChannelId: interaction.channel.id,
+    sourceGuildId: interaction.guild.id
   };
   logInfo.operation = 'set ' + props.reaction;
   return [logInfo];
@@ -482,6 +486,7 @@ function urlSearch(messageObject, props) {
 
 module.exports = {
   postImageInfo,
+  helpMessage,
   dmHelpMessage,
   setReaction,
   dmModuleStatus,

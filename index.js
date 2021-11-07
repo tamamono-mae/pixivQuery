@@ -73,46 +73,27 @@ client.on('interactionCreate', async interaction => {
     (interaction.channel.type == 'GUILD_PUBLIC_THREAD') ||
     (interaction.channel.type == 'GUILD_PRIVATE_THREAD')
   );
-  interaction.isMsgObj = true;
+  interaction.objType = 'commandInteraction';
   //console.log(interaction.channel);
   if (interaction.user.bot || !(interaction.isDm || interaction.isText)) return;
-  if (!interaction.isCommand()) return;
-
-  //
-  arch.setConfig(interaction).then(() => console.log(interaction));
-	console.log(interaction.options.get('name').value);
-	console.log(interaction.options.get('enable').value);
-	console.log(interaction.options.get('globally').value);
-  /*
-  arch.setConfig(srcMessage).then(() => {
-    return arch.msgRouter(srcMessage);
-  }).then(logArray => {
-    loggerArray(logArray);
-    const time = new Date() - start;
-    console.log(time);
-  }).catch(e => {
-    console.log(e);
-    loggerError(srcMessage, e);
-  });
-  */
-
-  //console.log(interaction);
-  if (interaction.commandName === 'ping') {
-    await interaction.reply( {content: 'Pong!', ephemeral: true });
-		/*
-    console.log(await interaction.reply({ content: 'Pong!', fetchReply: true })
-    .then((message) => message.interaction.deleteReply()));
-    await interaction.reply('.');
-    await interaction.deleteReply();
-    // defer == thinking
-
-    await interaction.deferReply({ ephemeral: true })
-    .then(console.log);
-
-    await interaction.followUp('test');
-		*/
-
-  }
+  if (interaction.isCommand()) { //Command interaction
+	  arch.setConfig(interaction).then(() => {
+			return arch.cmdRouter(interaction);
+		}).then(logArray => {
+			console.log(logArray);
+	    loggerArray(logArray);
+	    const time = new Date() - start;
+	    console.log(time);
+	  }).catch(e => {
+	    console.log(e);
+	    loggerError(interaction, e);
+	  });;
+		return;
+	};
+	if (interaction.isButton()) {
+		//Button interaction
+		return;
+	};
 
 });
 
@@ -124,7 +105,7 @@ client.on("messageCreate", function(srcMessage) {
     (srcMessage.channel.type == 'GUILD_PUBLIC_THREAD') ||
     (srcMessage.channel.type == 'GUILD_PRIVATE_THREAD')
   );
-  srcMessage.isMsgObj = true;
+	srcMessage.objType = 'message';
   if (srcMessage.author.bot || !(srcMessage.isDm || srcMessage.isText)) return;
 	initCmdAll(client);
 	if (Array.from(srcMessage.attachments.values()).length == 0) {
@@ -171,7 +152,7 @@ client.on("messageReactionAdd", (messageReaction) => {
   messageReaction.rts = start;
   messageReaction.isDm = (messageReaction.message.channel.type == 'dm');
   messageReaction.isText = (messageReaction.message.channel.type == 'text');
-  messageReaction.isMsgObj = false;
+	messageReaction.objType = 'reaction';
   messageReaction.client = client;
   if (messageReaction.message.author.id != client.user.id) return;
   messageReaction.reactionCurrentUser = Array.from(messageReaction.users.cache.values());

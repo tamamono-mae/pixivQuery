@@ -112,6 +112,16 @@ async function initCmdAll(client) {
   console.log(`[ info ] Initilize commands finished.`);
 }
 
+function checkParameterUndfeind(interaction, varKey) {
+  var parameterUndfeind = [];
+  var varKeyCurrent;
+  for(var i=0; i<varKey.length; i++){
+    varKeyCurrent = interaction.options.get(varKey[i]);
+    if(varKeyCurrent == null) parameterUndfeind.push(varKey[i]);
+  }
+  return parameterUndfeind;
+}
+
 module.exports = {
   replyConfigMessage,
   addReaction,
@@ -119,5 +129,6 @@ module.exports = {
   urlDump,
   rmReaction,
   initCmdAll,
-  initCmd
+  initCmd,
+  checkParameterUndfeind
 };
