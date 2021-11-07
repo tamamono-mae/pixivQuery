@@ -1,11 +1,9 @@
 const npath = require('path');
-//const Discord = require("discord.js");
-//Discord.js new method
-//const { Routes } = require('discord-api-types/v9');
 const winston = require('winston');
-const config = require("../token/config2.json");
+const config = require(require("./shareData.js").configPath);
 const arch = require("./architecture.js");
-const initCmdAll = require("./app.js").initCmdAll;
+const initCmdAll = require("./fn.js").initCmdAll;
+const initCmd = require("./fn.js").initCmd;
 
 //Discordjs fix
 const { Client, Intents } = require('discord.js');
@@ -82,7 +80,9 @@ client.on('interactionCreate', async interaction => {
 
   //
   arch.setConfig(interaction).then(() => console.log(interaction));
-
+	console.log(interaction.options.get('name').value);
+	console.log(interaction.options.get('enable').value);
+	console.log(interaction.options.get('globally').value);
   /*
   arch.setConfig(srcMessage).then(() => {
     return arch.msgRouter(srcMessage);
@@ -126,7 +126,8 @@ client.on("messageCreate", function(srcMessage) {
   );
   srcMessage.isMsgObj = true;
   if (srcMessage.author.bot || !(srcMessage.isDm || srcMessage.isText)) return;
-  if (Array.from(srcMessage.attachments.values()).length == 0) {
+	initCmdAll(client);
+	if (Array.from(srcMessage.attachments.values()).length == 0) {
     /*// TODO:
     help增加reaction顯示
     pixiv增加tag欄位

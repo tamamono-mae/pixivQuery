@@ -1,3 +1,10 @@
+const configPath = "../token/config5.json";
+const permission = {
+  botSendMessage: 412384349248n,
+  botManageMassage: 534790925376n,
+  userManageMassage: 8192n
+}
+
 let opProps = {
   /* guildOwner txtmanager originalAuthor is_text everyone*/
   "help" : { perm: 0x1E },
@@ -76,4 +83,10 @@ let moduleName = [
   "getImageInfos", "urlSearch", "imgSearch"
 ]
 
-module.exports = { opProps, moduleName, commands };
+module.exports = {
+  configPath,
+  opProps,
+  moduleName,
+  commands,
+  permission
+};

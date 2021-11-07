@@ -1,4 +1,5 @@
-const config = require("../token/config2.json");
+const npath = require('path');
+const config = require(require("./shareData.js").configPath);
 const a = require("./app.js");
 const sd = require("./shareData.js");
 const dbop = require("./dbOperation.js");
@@ -115,9 +116,9 @@ function permissionCheckBot(client) {
   else messageObject = client.message;
   return [
     //sendMessage
-    messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(412384349248n),
+    messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(sd.permission.botSendMessage),
     //manageMessage
-    messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(534790925376n)
+    messageObject.channel.permissionsFor(messageObject.channel.guild.me).has(sd.permission.botManageMassage)
   ]
 }
 
@@ -126,12 +127,12 @@ function permissionCheckUser(client, opCode, authorId = '0') {
   if (!client.isDm) {
     if (client.isMsgObj) {
       p = ((client.channel.guild.ownerID == client.author.id ? 0x10:0)
-        | (client.channel.permissionsFor(client.author).has(0x2000) ? 0x8:0)
+        | (client.channel.permissionsFor(client.author).has(sd.permission.userManageMassage) ? 0x8:0)
         | (client.author.id == authorId ? 0x4:0)
         | 0x3) & sd.opProps[opCode]['perm'];
     } else {
       p = ((client.message.channel.guild.ownerID == client.reactionCurrentUser.id ? 0x10:0)
-        | (client.message.channel.permissionsFor(client.reactionCurrentUser).has(0x2000) ? 0x8:0)
+        | (client.message.channel.permissionsFor(client.reactionCurrentUser).has(sd.permission.userManageMassage) ? 0x8:0)
         | (client.users.cache.has(authorId) ? 0x4:0)
         | 0x3) & sd.opProps[opCode]['perm'];
     }

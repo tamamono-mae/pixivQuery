@@ -1,4 +1,4 @@
-const config = require("../token/config2.json");
+const config = require(require("./shareData.js").configPath);
 const sd = require("./shareData.js");
 const dbop = require("./dbOperation.js");
 const fn = require("./fn.js");
@@ -6,8 +6,6 @@ const q = require("./query.js");
 const dbCache = require('memory-cache');
 const fetch = require("node-fetch");
 const formData = require("form-data");
-const { Routes } = require('discord-api-types/v9');
-const { REST } = require('@discordjs/rest');
 
 async function postImageInfo(messageObject ,props) {
   var queryResult;
@@ -18,7 +16,7 @@ async function postImageInfo(messageObject ,props) {
     default:
       queryResult = null;
   }
-  if (queryResult == null) throw new Error('meta-data not found!');
+  if (queryResult == null) throw new Error('[ warn ] meta-data not found!');
   if (messageObject.isMessageManager && !messageObject.deleted) {
     messageObject = await messageObject.delete();
   }
@@ -167,7 +165,7 @@ function setReaction(messageObject ,props) {
       'No modification made',
       config.deleteMessageDelay
     );
-    throw new Error('No modification made');
+    throw new Error('[ info ] No modification made');
   }
   let writeData = { "reaction" : props.reaction };
   fn.replyConfigMessage(
@@ -255,7 +253,7 @@ function moduleSwitch(messageObject, props) {
       'Incorrect module name',
       config.deleteMessageDelay
     );
-    throw new Error('Incorrect module name');
+    throw new Error('[ info ] Incorrect module name');
   }
   props.isGlobal = (props.isGlobal != null);
   props.operation = (props.operation.match(/enable/i) != null);
@@ -269,7 +267,7 @@ function moduleSwitch(messageObject, props) {
         'No modification made',
         config.deleteMessageDelay
       );
-      throw new Error('No modification made');
+      throw new Error('[ info ] No modification made');
     }
   let writeData = {
       "functionSwitch" :(
@@ -482,35 +480,6 @@ function urlSearch(messageObject, props) {
   });
 }
 
-async function initCmd(rest, userID, guildsHandling, commands) {
-  try {
-    await rest.put(
-      Routes.applicationGuildCommands(userID, guildsHandling),
-      { body: commands }
-    );
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-async function initCmdAll(client) {
-  const rest = new REST({ version: '9' }).setToken(config.BOT_TOKEN);
-  const commands = require("./shareData.js").commands;
-  let guildsHandling = Array.from(client.guilds.cache.keys());
-  //Initilize commands
-  console.log(`[ info ] Initilize commands ...`);
-  var promisePool = [];
-  //Make a task array for multi-tasking.
-  for (var i=0; i<guildsHandling.length; i++) {
-    promisePool.push(
-      initCmd(rest, client.user.id, guildsHandling[i], commands)
-    );
-  }
-  //Launch tasks.
-  await Promise.all(promisePool);
-  console.log(`[ info ] Initilize commands finished.`);
-}
-
 module.exports = {
   postImageInfo,
   dmHelpMessage,
@@ -519,6 +488,5 @@ module.exports = {
   moduleSwitch,
   turnPage,
   removeEmbedMsg,
-  urlSearch,
-  initCmdAll
+  urlSearch
 };

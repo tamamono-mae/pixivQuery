@@ -1,5 +1,4 @@
-
-const config = require("../token/config2.json");
+const config = require(require("./shareData.js").configPath);
 const configTables = ['guildFunction', 'channelFunction'];
 const cacheTables = ['cacheMsg'];
 
