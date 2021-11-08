@@ -50,7 +50,7 @@ function loggerError(client, e) {
   logInfo = {
     error: e.message,
     sourceId: client.id,
-    sourceUserId: client.author.id,
+    sourceUserId: ((client.author == null) ? client.user.id : client.author.id),
     sourceTimestamp: client.createdTimestamp,
     sourceContent: client.content,
     sourceChannelId: client.channel.id,

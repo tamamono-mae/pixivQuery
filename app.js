@@ -241,6 +241,118 @@ function dmModuleStatus(messageObject ,props) {
   return [logInfo];
 }
 
+function functionStatus(interaction ,props) {
+  /*
+  var statusMsg = {
+    "embed": {
+    "title": "Status for modules in ",
+    "description": "",
+    "color": props.color,
+    "thumbnail": {
+      "url": props.thumbnail
+    }
+  }};
+  */
+  var statusEmbed = {
+    "title": "Status for modules in ",
+    "description": "",
+    "color": props.color,
+    "thumbnail": {
+        "url": props.thumbnail
+      }
+  };
+  var moduleStatus = "🇬 🇨\n";
+  statusEmbed.title +=
+  interaction.guild.name + ' and ' + interaction.channel.name;
+  var [guildSwitch , channelSwitch] = [interaction.guildSwitch , interaction.channelSwitch];
+  for(var i=0;i<sd.moduleName.length;i++) {
+    moduleStatus +=
+    ((guildSwitch & 1) == 1 ? '✅' : '❎') + " " +
+    ((channelSwitch & 1) == 1 ? '✅' : '❎') + " " +
+    sd.moduleName[i] + "\n";
+    guildSwitch = guildSwitch >> 1 ;
+    channelSwitch = channelSwitch >> 1 ;
+  }
+  statusEmbed.description = moduleStatus;
+  interaction.reply({
+    embeds: [statusEmbed],
+    ephemeral: true
+  });
+  //====================== Change text command to slash command, reply ephemeral: true
+  //messageObject.delete();
+
+  var logInfo = {
+    type: props.opCode,
+    sourceId: interaction.id,
+    sourceUserId: interaction.user.id,
+    sourceTimestamp: interaction.createdTimestamp,
+    sourceContent: interaction.commandName,
+    sourceChannelId: interaction.channel.id,
+    sourceGuildId: interaction.guild.id,
+    replyContent: statusEmbed
+  };
+  return [logInfo];
+}
+
+function functionConfig(interaction, props) {
+  //dbLog['type'] = 'Config';
+  var check = false;
+  //var botModule = objectCheck.content.split(" ")[1];
+  // Check function name is not illigal.
+  props.function = interaction.options.get('name').value;
+  for (i=0;i<sd.functionName.length;i++) {
+    if (props.function.match(new RegExp(`^${sd.functionName[i]}`,'gm')) != null){
+      check = true;
+      break;
+    }
+  }
+  if (!check) {
+    interaction.reply({
+      content: 'Incorrect function name',
+      ephemeral: true
+    });
+    throw new Error('[ info ] Incorrect function name');
+  }
+  props.isGlobal = interaction.options.get('globally').value;
+  props.operation = interaction.options.get('enable').value;
+  let functionSwitch = (props.isGlobal) ? interaction.guildSwitch : interaction.channelSwitch;
+  if (props.operation ==
+    ((
+      (functionSwitch >> sd.opProps[props.function]['bit'] & 1)
+    ) == 1)) {
+      interaction.reply({
+        content: 'No modification made',
+        ephemeral: true
+      });
+      throw new Error('[ info ] No modification made');
+    }
+  let writeData = {
+      "functionSwitch" :(
+        functionSwitch ^ (1 << sd.opProps[props.function]['bit'])
+      )
+    };
+  interaction.reply({
+    content: props.function + (props.operation ?   ' 🇴 🇳' : ' 🇴 🇫 🇫'),
+    ephemeral: true
+  });
+  dbop.toConfigDB(interaction, writeData, props.isGlobal);
+
+  var logInfo = {
+    type: props.opCode,
+    sourceId: interaction.id,
+    sourceUserId: interaction.author.id,
+    sourceTimestamp: interaction.createdTimestamp,
+    sourceContent: interaction.content,
+    sourceChannelId: interaction.channel.id,
+    sourceGuildId: interaction.guild.id,
+  };
+  logInfo.operation =
+    props.function +
+    (props.operation ? ' enable' : ' disable') +
+    (props.isGlobal ? ' global' : '');
+  return [logInfo];
+}
+
 function moduleSwitch(messageObject, props) {
   //dbLog['type'] = 'Config';
   var check = false;
@@ -490,7 +602,9 @@ module.exports = {
   dmHelpMessage,
   setReaction,
   dmModuleStatus,
+  functionStatus,
   moduleSwitch,
+  functionConfig,
   turnPage,
   removeEmbedMsg,
   urlSearch

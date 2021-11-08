@@ -17,6 +17,7 @@ let opProps = {
   // 1 1 1 1 1
   "status": { perm: 0x18 },
   "moduleSwitch": { perm: 0x18 },
+  "functionConfig": { perm: 0x18 },
   "setReaction": { perm: 0x18 },
   // 1 1 0 0 0
   "removeEmbedMsg": { perm: 0x1C },
@@ -83,10 +84,14 @@ let moduleName = [
   "getImageInfos", "urlSearch", "imgSearch"
 ]
 
+let functionName = [
+  "getImageInfos", "urlSearch", "imgSearch"
+]
+
 module.exports = {
   configPath,
   opProps,
-  moduleName,
+  functionName,
   commands,
   permission
 };

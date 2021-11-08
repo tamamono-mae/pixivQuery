@@ -97,7 +97,7 @@ function adminCommandSwitchOrder(interaction) {
       },
       {
         cmd: 'status',
-        action: a.dmModuleStatus,
+        action: a.functionStatus,
         varKey: [],
         varExt: {
           opCode: "status",
@@ -107,9 +107,9 @@ function adminCommandSwitchOrder(interaction) {
       },
       {
         cmd: 'fn',
-        action: a.moduleSwitch,
-        varKey: [],
-        varExt: { opCode: "functionSwitch" }
+        action: a.functionConfig,
+        varKey: [ 'name', 'enable' ],
+        varExt: { opCode: "functionConfig" }
       }
     ];
   return [];
