@@ -265,11 +265,11 @@ function functionStatus(interaction ,props) {
   statusEmbed.title +=
   interaction.guild.name + ' and ' + interaction.channel.name;
   var [guildSwitch , channelSwitch] = [interaction.guildSwitch , interaction.channelSwitch];
-  for(var i=0;i<sd.moduleName.length;i++) {
+  for(var i=0;i<sd.functionName.length;i++) {
     moduleStatus +=
     ((guildSwitch & 1) == 1 ? '✅' : '❎') + " " +
     ((channelSwitch & 1) == 1 ? '✅' : '❎') + " " +
-    sd.moduleName[i] + "\n";
+    sd.functionName[i] + "\n";
     guildSwitch = guildSwitch >> 1 ;
     channelSwitch = channelSwitch >> 1 ;
   }
@@ -332,7 +332,7 @@ function functionConfig(interaction, props) {
       )
     };
   interaction.reply({
-    content: props.function + (props.operation ?   ' 🇴 🇳' : ' 🇴 🇫 🇫'),
+    content: interaction.options.get('name').value + (props.operation ?   ' 🇴 🇳' : ' 🇴 🇫 🇫'),
     ephemeral: true
   });
   dbop.toConfigDB(interaction, writeData, props.isGlobal);

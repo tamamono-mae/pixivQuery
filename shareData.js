@@ -10,6 +10,7 @@ let opProps = {
   "help" : { perm: 0x1E },
   // 1 1 1 1 0
   "postImageInfo" : { perm: 0x1E , bit: 0 },
+  "getImageInfo" : { perm: 0x1E , bit: 0 },
   // 1 1 1 1 0
   "urlSearch" : { perm: 0x1F , bit: 1 },
   // 1 1 1 1 1
@@ -45,7 +46,7 @@ let commands = [
         required: true,
         type: 3,
         choices: [
-          { name: 'Get image infos', value: 'getImageInfos' },
+          { name: 'Get image infos', value: 'getImageInfo' },
           { name: 'Image search', value: 'imgSearch' },
           { name: 'URL search', value: 'urlSearch' }
         ]
@@ -85,7 +86,7 @@ let moduleName = [
 ]
 
 let functionName = [
-  "getImageInfos", "urlSearch", "imgSearch"
+  "getImageInfo", "urlSearch", "imgSearch"
 ]
 
 module.exports = {
