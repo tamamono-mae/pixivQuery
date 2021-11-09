@@ -122,6 +122,106 @@ function checkParameterUndfeind(interaction, varKey) {
   return parameterUndfeind;
 }
 
+function makePageRow(data) { //page ,currentPage = 1,
+  /*const multiPageRow = {
+    type: 'ACTION_ROW',
+    components: [
+      {
+        type: 'BUTTON',
+        label: '⏪',
+        customId: 'priviousPage',
+        style: 'PRIMARY',
+        emoji: null,
+        url: null,
+        disabled: false
+      },
+      {
+        type: 'BUTTON',
+        label: 'current/total',
+        customId: 'page',
+        style: 'SECONDARY',
+        emoji: null,
+        url: null,
+        disabled: true
+      },
+      {
+        type: 'BUTTON',
+        label: '⏩',
+        customId: 'nextPage',
+        style: 'PRIMARY',
+        emoji: null,
+        url: null,
+        disabled: false
+      },
+      {
+        type: 'BUTTON',
+        label: '🗑️',
+        customId: 'remove',
+        style: 'DANGER',
+        emoji: null,
+        url: null,
+        disabled: false
+      }
+    ]
+  }*/
+  var pageRow = {
+    type: 'ACTION_ROW',
+    components: [
+      {
+        type: 'BUTTON',
+        label: data.currentPage + '/' + data.pageCount,
+        customId: 'page',
+        style: 'SECONDARY',
+        emoji: null,
+        url: null,
+        disabled: true
+      },
+      {
+        type: 'BUTTON',
+        label: '🗑️',
+        customId: 'remove',
+        style: 'DANGER',
+        emoji: null,
+        url: null,
+        disabled: false
+      }
+    ]
+  }
+  if (data.pageCount <= 1) return pageRow;
+  var pp = {
+    type: 'BUTTON',
+    label: '⏪',
+    customId: 'priviousPage',
+    style: 'PRIMARY',
+    emoji: null,
+    url: null,
+    disabled: (data.currentPage == 0)
+  }
+  var np = {
+    type: 'BUTTON',
+    label: '⏩',
+    customId: 'nextPage',
+    style: 'PRIMARY',
+    emoji: null,
+    url: null,
+    disabled: (data.currentPage == data.pageCount)
+  }
+  var rmp = {
+    type: 'BUTTON',
+    label: '🗑️',
+    customId: 'remove',
+    style: 'DANGER',
+    emoji: null,
+    url: null,
+    disabled: false
+  }
+  pageRow.components.unshift(pp);
+  pageRow.components.pop();
+  pageRow.components.push(np);
+  pageRow.components.push(rmp);
+  return pageRow;
+}
+
 module.exports = {
   replyConfigMessage,
   addReaction,
@@ -130,5 +230,6 @@ module.exports = {
   rmReaction,
   initCmdAll,
   initCmd,
-  checkParameterUndfeind
+  checkParameterUndfeind,
+  makePageRow
 };

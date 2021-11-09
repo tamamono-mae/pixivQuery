@@ -62,6 +62,7 @@ async function postImageInfo(messageObject ,props) {
   replyContent["content"] =
   "This message was posted by\n" +
   messageObject.author.username + " (" + messageObject.author.id + ").";
+  replyContent['components'] = [fn.makePageRow(queryResult)];
   let replyMessage = await messageObject.channel.send(replyContent);
   //add reaction in background
   replyMessage.configReaction = messageObject.configReaction;
@@ -109,7 +110,7 @@ async function postImageInfo(messageObject ,props) {
   }
 }
 
-function helpMessageAdmin(descriptionAry, moduleName, color, thumbnail) {
+function helpEmbedAdmin(descriptionAry, moduleName, color, thumbnail) {
   var helpMsg = {
     "title": "Manager commands",
     "description": "",
@@ -133,7 +134,7 @@ function helpMessage(interaction ,props) {
   var adminContent = { embeds: [ sd.helpEmbed ] };
   if (interaction.channel.permissionsFor(interaction.user).has(8192n)) {
     adminContent.embeds.push(
-    helpMessageAdmin(
+    helpEmbedAdmin(
       props.description,
       sd.functionName,
       props.color,
@@ -162,7 +163,7 @@ function dmHelpMessage(messageObject ,props) {
   var adminContent = "";
   if (messageObject.channel.permissionsFor(messageObject.author).has(8192n)) {
     adminContent =
-    helpMessageAdmin(
+    helpEmbedAdmin(
       props.description,
       sd.moduleName,
       props.color,
