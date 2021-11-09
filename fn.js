@@ -150,7 +150,7 @@ function makePageRow(data) {
   var pp = {
     type: 'BUTTON',
     label: '⏪',
-    customId: 'priviousPage',
+    customId: 'previousPage',
     style: 'PRIMARY',
     emoji: null,
     url: null,

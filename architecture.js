@@ -329,17 +329,17 @@ function btnRouter(interaction) {
   let btn = interaction.customId;
   let route = [
     {
-      patt: "⏩",
+      patt: 'nextPage',
       action: a.turnPage,
       varExt: { opCode: "turnPage", isNext: true }
     },
     {
-      patt: "⏪",
+      patt: 'previousPage',
       action: a.turnPage,
       varExt: { opCode: "turnPage", isNext: false }
     },
     {
-      patt: "🗑️",
+      patt: 'remove',
       action: a.removeEmbedMsg,
       varExt: { opCode: "removeEmbedMsg" }
     }
@@ -348,25 +348,25 @@ function btnRouter(interaction) {
 
   for (var i=0;i<route.length;i++) {
     let currRoute = route[i];
-    if (reaction != currRoute.patt) continue;
+    if (interaction.customId != currRoute.patt) continue;
 
     var props = {};
     for (var j=0;j<Object.keys(route[i]['varExt']).length;j++) {
       props[Object.keys(route[i]['varExt'])[j]] = Object.values(route[i]['varExt'])[j];
     }
     let checkPermissionResult = permissionCheckUser(
-      reactionObject, currRoute.varExt.opCode,
-      reactionObject.cacheData.sourceUserId
+      interaction, currRoute.varExt.opCode,
+      interaction.user.id
     );
     if (!checkPermissionResult) throw new Error("Permission denied");
-    checkPermissionResult = permissionCheckBot(reactionObject);
+    checkPermissionResult = permissionCheckBot(interaction);
     if (!checkPermissionResult[0]) throw new Error("Permission of bot denied, exit!");
-    reactionObject.isMessageManager = checkPermissionResult[1];
+    interaction.isMessageManager = checkPermissionResult[1];
     /*
     middleware() {
     }
     */
-    return currRoute.action(reactionObject, props);
+    return currRoute.action(interaction, props);
   }
 }
 

@@ -441,54 +441,54 @@ function moduleSwitch(messageObject, props) {
   return [logInfo];
 }
 
-async function turnPage(reactionObject, props) {
-  fn.rmReaction(reactionObject);
+async function turnPage(interaction, props) {
+  //fn.rmReaction(reactionObject);
   var check = false;
   if (
     props.isNext &&
-    reactionObject.cacheData.currentPage < reactionObject.cacheData.pageCount &&
-    reactionObject.cacheData.pageCount > 1
+    interaction.cacheData.currentPage < interaction.cacheData.pageCount &&
+    interaction.cacheData.pageCount > 1
     )
       check = true;
   if (
     !props.isNext &&
-    reactionObject.cacheData.currentPage > 1 &&
-    reactionObject.cacheData.pageCount > 1
+    interaction.cacheData.currentPage > 1 &&
+    interaction.cacheData.pageCount > 1
     )
       check = true;
   if (!check) return;
   var queryResult;
   var dumpResult;
-  reactionObject.cacheData.currentPage += fn.pageOffset(props.isNext);
-  switch (reactionObject.cacheData.type) {
+  interaction.cacheData.currentPage += fn.pageOffset(props.isNext);
+  switch (interaction.cacheData.type) {
     case 'pixiv':
-      dumpResult = fn.urlDump(reactionObject.cacheData.sourceContent);
-      queryResult = await q.pixivQuery(dumpResult['uid'], reactionObject.cacheData.currentPage);
+      dumpResult = fn.urlDump(interaction.cacheData.sourceContent);
+      queryResult = await q.pixivQuery(dumpResult['uid'], interaction.cacheData.currentPage);
       break;
   }
-  reactionObject.message.edit({
+  interaction.message.edit({
     embeds: q.query2msg(queryResult,dumpResult['website']).embeds,
     components: [fn.makePageRow(queryResult)]
   });
-  dbop.updateCurrentPage(reactionObject);
+  dbop.updateCurrentPage(interaction);
   //Update cache data
-  var cacheKey = 'cacheMsg_' + reactionObject.message.id + '_' + reactionObject.message.channel.id;
-  if (!reactionObject.isDm) {
-    cacheKey += '_' + reactionObject.message.channel.guild.id;
+  var cacheKey = 'cacheMsg_' + interaction.message.id + '_' + interaction.message.channel.id;
+  if (!interaction.isDm) {
+    cacheKey += '_' + interaction.message.channel.guild.id;
   }
   dbCache.del(cacheKey);
-  dbCache.put(cacheKey ,reactionObject.cacheData);
+  dbCache.put(cacheKey ,interaction.cacheData);
 
   var logInfo = {
     type: props.opCode,
-    sourceId: reactionObject.message.id,
-    sourceUserId: reactionObject.reactionCurrentUser,
-    sourceTimestamp: reactionObject.rts,
-    sourceContent: reactionObject.emoji.name,
-    sourceChannelId: reactionObject.message.channel.id,
+    sourceId: interaction.message.id,
+    sourceUserId: interaction.reactionCurrentUser,
+    sourceTimestamp: interaction.rts,
+    sourceContent: interaction.customId,
+    sourceChannelId: interaction.message.channel.id,
   };
-  if (!reactionObject.isDm)
-    logInfo.sourceGuildId = reactionObject.message.guild.id;
+  if (!interaction.isDm)
+    logInfo.sourceGuildId = interaction.message.guild.id;
   return [logInfo];
 }
 

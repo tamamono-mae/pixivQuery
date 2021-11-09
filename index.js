@@ -67,6 +67,7 @@ client.login(config.BOT_TOKEN);
 
 client.on('interactionCreate', function(interaction) {
   const start = new Date();
+	interaction.rts = start;
   interaction.isDm = (interaction.channel.type == 'dm');
   interaction.isText = (
     (interaction.channel.type == 'GUILD_TEXT') ||
@@ -80,8 +81,10 @@ client.on('interactionCreate', function(interaction) {
 		if (interaction.isCommand()) //Command interaction
 			return arch.cmdRouter(interaction);
 		if (interaction.isButton()) { //Button interaction
-			console.log(interaction);
-			return arch.btnRouter(interaction);
+			return arch.setEmbedMsgCache(interaction).then(() => {
+				if (interaction.cacheData == null) throw 'No data';
+				return arch.btnRouter(interaction);
+			});
 		};
 	}).then(logArray => {
 		loggerArray(logArray);
