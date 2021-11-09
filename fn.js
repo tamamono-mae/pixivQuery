@@ -154,7 +154,7 @@ function makePageRow(data) {
     style: 'PRIMARY',
     emoji: null,
     url: null,
-    disabled: (data.currentPage == 1)
+    disabled: (data.currentPage <= 1)
   }
   var np = {
     type: 'BUTTON',
@@ -163,7 +163,7 @@ function makePageRow(data) {
     style: 'PRIMARY',
     emoji: null,
     url: null,
-    disabled: (data.currentPage == data.pageCount)
+    disabled: (data.currentPage >= data.pageCount)
   }
   var rmp = {
     type: 'BUTTON',
