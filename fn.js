@@ -122,48 +122,7 @@ function checkParameterUndfeind(interaction, varKey) {
   return parameterUndfeind;
 }
 
-function makePageRow(data) { //page ,currentPage = 1,
-  /*const multiPageRow = {
-    type: 'ACTION_ROW',
-    components: [
-      {
-        type: 'BUTTON',
-        label: '⏪',
-        customId: 'priviousPage',
-        style: 'PRIMARY',
-        emoji: null,
-        url: null,
-        disabled: false
-      },
-      {
-        type: 'BUTTON',
-        label: 'current/total',
-        customId: 'page',
-        style: 'SECONDARY',
-        emoji: null,
-        url: null,
-        disabled: true
-      },
-      {
-        type: 'BUTTON',
-        label: '⏩',
-        customId: 'nextPage',
-        style: 'PRIMARY',
-        emoji: null,
-        url: null,
-        disabled: false
-      },
-      {
-        type: 'BUTTON',
-        label: '🗑️',
-        customId: 'remove',
-        style: 'DANGER',
-        emoji: null,
-        url: null,
-        disabled: false
-      }
-    ]
-  }*/
+function makePageRow(data) {
   var pageRow = {
     type: 'ACTION_ROW',
     components: [
@@ -195,7 +154,7 @@ function makePageRow(data) { //page ,currentPage = 1,
     style: 'PRIMARY',
     emoji: null,
     url: null,
-    disabled: (data.currentPage == 0)
+    disabled: (data.currentPage == 1)
   }
   var np = {
     type: 'BUTTON',
