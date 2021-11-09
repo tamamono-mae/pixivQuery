@@ -130,7 +130,34 @@ function helpMessageAdmin(descriptionAry, moduleName, color, thumbnail) {
 }
 
 function helpMessage(interaction ,props) {
+  var adminContent = "";
+  if (interaction.channel.permissionsFor(interaction.user).has(8192n)) {
+    adminContent =
+    helpMessageAdmin(
+      props.description,
+      sd.functionName,
+      props.color,
+      props.thumbnail
+    );
+    interaction.reply({
+      ...adminContent,
+      ephemeral: true
+    });
+  }
+  //srcMessage.channel.send(messageContent);
+  //if (messageObject.isMessageManager) messageObject.delete();
 
+  var logInfo = {
+    type: props.opCode,
+    sourceId: interaction.id,
+    sourceUserId: interaction.user.id,
+    sourceTimestamp: interaction.createdTimestamp,
+    sourceContent: interaction.commandName,
+    sourceChannelId: interaction.channel.id,
+    sourceGuildId: interaction.guild.id,
+    replyContent: adminContent
+  };
+  return [logInfo];
 }
 
 function dmHelpMessage(messageObject ,props) {

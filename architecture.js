@@ -203,6 +203,7 @@ function cmdRouter(interaction) {
     {
       cmd: 'help',
       action: a.helpMessage,
+      varKey: [],
       varExt: {
         opCode: "help",
         color: config.colors[1],
