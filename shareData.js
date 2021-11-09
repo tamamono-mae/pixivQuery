@@ -89,11 +89,21 @@ let functionName = [
   "getImageInfo", "urlSearch", "imgSearch"
 ]
 
+const helpEmbed = {
+  "title": "User commands",
+  "description": "User commands",
+  "color": 0,
+  "thumbnail": {
+    "url": ""
+  }
+};
+
 module.exports = {
   configPath,
   opProps,
   functionName,
   moduleName,
   commands,
-  permission
+  permission,
+  helpEmbed
 };

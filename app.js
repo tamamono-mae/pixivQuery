@@ -110,7 +110,7 @@ async function postImageInfo(messageObject ,props) {
 }
 
 function helpMessageAdmin(descriptionAry, moduleName, color, thumbnail) {
-  helpMsg = {
+  var helpMsg = {
     "title": "Manager commands",
     "description": "",
     "color": 0,
@@ -130,22 +130,20 @@ function helpMessageAdmin(descriptionAry, moduleName, color, thumbnail) {
 }
 
 function helpMessage(interaction ,props) {
-  var adminContent = "";
+  var adminContent = { embeds: [ sd.helpEmbed ] };
   if (interaction.channel.permissionsFor(interaction.user).has(8192n)) {
-    adminContent =
+    adminContent.embeds.push(
     helpMessageAdmin(
       props.description,
       sd.functionName,
       props.color,
       props.thumbnail
-    );
-    interaction.reply({
-      ...adminContent,
-      ephemeral: true
-    });
-  }
-  //srcMessage.channel.send(messageContent);
-  //if (messageObject.isMessageManager) messageObject.delete();
+    ).embeds[0]);
+  };
+  interaction.reply({
+    ...adminContent,
+    ephemeral: true
+  });
 
   var logInfo = {
     type: props.opCode,
