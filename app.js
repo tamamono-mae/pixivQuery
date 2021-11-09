@@ -466,7 +466,10 @@ async function turnPage(reactionObject, props) {
       queryResult = await q.pixivQuery(dumpResult['uid'], reactionObject.cacheData.currentPage);
       break;
   }
-  reactionObject.message.edit(q.query2msg(queryResult,dumpResult['website']));
+  reactionObject.message.edit({
+    embeds: q.query2msg(queryResult,dumpResult['website']).embeds,
+    components: [fn.makePageRow(queryResult)]
+  });
   dbop.updateCurrentPage(reactionObject);
   //Update cache data
   var cacheKey = 'cacheMsg_' + reactionObject.message.id + '_' + reactionObject.message.channel.id;
