@@ -93,6 +93,7 @@ module.exports = {
   configPath,
   opProps,
   functionName,
+  moduleName,
   commands,
   permission
 };

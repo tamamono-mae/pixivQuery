@@ -80,12 +80,11 @@ client.on('interactionCreate', async interaction => {
 	  arch.setConfig(interaction).then(() => {
 			return arch.cmdRouter(interaction);
 		}).then(logArray => {
-			console.log(logArray);
 	    loggerArray(logArray);
 	    const time = new Date() - start;
-	    console.log(time);
+	    //console.log(time);
 	  }).catch(e => {
-	    console.log(e);
+	    console.error(e);
 	    loggerError(interaction, e);
 	  });;
 		return;
@@ -120,9 +119,9 @@ client.on("messageCreate", function(srcMessage) {
     }).then(logArray => {
       loggerArray(logArray);
       const time = new Date() - start;
-      console.log(time);
+      //console.log(time);
     }).catch(e => {
-      console.log(e);
+      console.error(e);
       loggerError(srcMessage, e);
     });
   } else {
@@ -131,16 +130,16 @@ client.on("messageCreate", function(srcMessage) {
     }).then(logArray => {
       loggerArray(logArray);
       const time = new Date() - start;
-      console.log(time);
+      //console.log(time);
     }).catch(e => {
-      console.log(e);
+      console.error(e);
       loggerError(srcMessage, e);
     });
   }
 });
 
 client.on('ready', () => {
-  console.log(`[ info ] Logged in as ${client.user.tag}!`);
+  console.info(`[ info ] Logged in as ${client.user.tag}!`);
 	initCmdAll(client);
   setInterval(( () => {
     cacheDb('cacheMsg').where('sourceTimestamp', '<', Date.now()-86400000).del().then(()=>{});
