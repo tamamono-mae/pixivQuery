@@ -65,7 +65,7 @@ function loggerError(client, e) {
 
 client.login(config.BOT_TOKEN);
 
-client.on('interactionCreate', async interaction => {
+client.on('interactionCreate', function(interaction) {
   const start = new Date();
   interaction.isDm = (interaction.channel.type == 'dm');
   interaction.isText = (
@@ -76,24 +76,21 @@ client.on('interactionCreate', async interaction => {
   interaction.objType = 'commandInteraction';
   //console.log(interaction.channel);
   if (interaction.user.bot || !(interaction.isDm || interaction.isText)) return;
-  if (interaction.isCommand()) { //Command interaction
-	  arch.setConfig(interaction).then(() => {
+	arch.setConfig(interaction).then(() => {
+		if (interaction.isCommand()) //Command interaction
 			return arch.cmdRouter(interaction);
-		}).then(logArray => {
-	    loggerArray(logArray);
-	    const time = new Date() - start;
-	    //console.log(time);
-	  }).catch(e => {
-	    console.error(e);
-	    loggerError(interaction, e);
-	  });;
-		return;
-	};
-	if (interaction.isButton()) {
-		//Button interaction
-		return;
-	};
-
+		if (interaction.isButton()) { //Button interaction
+			console.log(interaction);
+			return arch.btnRouter(interaction);
+		};
+	}).then(logArray => {
+		loggerArray(logArray);
+		const time = new Date() - start;
+		//console.log(time);
+	}).catch(e => {
+		console.error(e);
+		loggerError(interaction, e);
+	});
 });
 
 client.on("messageCreate", function(srcMessage) {
