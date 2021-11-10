@@ -149,7 +149,7 @@ function makePageRow(data) {
   if (data.pageCount <= 1) return pageRow;
   var pp = {
     type: 'BUTTON',
-    label: '⏪',
+    label: '<<',
     customId: 'previousPage',
     style: 'PRIMARY',
     emoji: null,
@@ -158,7 +158,7 @@ function makePageRow(data) {
   }
   var np = {
     type: 'BUTTON',
-    label: '⏩',
+    label: '>>',
     customId: 'nextPage',
     style: 'PRIMARY',
     emoji: null,
