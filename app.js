@@ -24,10 +24,10 @@ async function postImageInfo(messageObject ,props) {
   //Discord disable this function for bot.           ^^^^^^^^^^^^^^^
   //post and get replyMessage first
   let replyContent = q.query2msg(queryResult, props.website);
-  /* Remove Cache
-  const imgCacheKey = 'cache.'+encodeURIComponent(replyContent.embed.image.url);
+  /* Remove Cache */
+  const imgCacheKey = 'cache.'+encodeURIComponent(replyContent.embeds[0].image.url);
   if (!dbCache.get(imgCacheKey)) {
-    console.log('Caching ' + replyContent.embed.image.url);
+    console.log('Caching ' + replyContent.embeds[0].image.url);
     //let body = await fetch(replyContent.embed.image.url);
     //console.log(messageObject.client);
     //const cacheChannel = messageObject.client.channels.cache;
@@ -39,7 +39,7 @@ async function postImageInfo(messageObject ,props) {
     };
 
     var cacheImgformdata = new formData();
-    cacheImgformdata.append("image", replyContent.embed.image.url);
+    cacheImgformdata.append("image", replyContent.embeds[0].image.url);
     cacheImgformdata.append("album", config.imgurAlbum);
     cacheImgformdata.append("type", "url");
 
@@ -57,8 +57,8 @@ async function postImageInfo(messageObject ,props) {
     console.log('Cached');
     dbCache.put(imgCacheKey, resJson.data.link);
   }
-  replyContent.embed.image.url = dbCache.get(imgCacheKey);
-  */
+  replyContent.embeds[0].image.url = dbCache.get(imgCacheKey);
+
   replyContent["content"] =
   "This message was posted by\n" +
   messageObject.author.username + " (" + messageObject.author.id + ").";
