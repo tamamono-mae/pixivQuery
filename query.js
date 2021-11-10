@@ -4,6 +4,7 @@ const formData = require("form-data");
 const { htmlToText } = require('html-to-text');
 const config = require(require("./shareData.js").configPath);
 const webCache = require('memory-cache');
+const { textArray2str } = require('./fn.js');
 
 async function checkUrls(urlArr) {
   for(var i=0;i<urlArr.length;i++) {
@@ -22,6 +23,12 @@ function mkfd(url) {
   formdata.append("hide", "0");
   formdata.append("database", "999");
   return formdata;
+}
+
+function extractTag(tagObjs) {
+  var tagNames = [];
+  for(var i=0; i<tagObjs.length; i++) tagNames.push(tagObjs[i].tag);
+  return tagNames;
 }
 
 function saucenaoSearch(url){
@@ -87,6 +94,7 @@ async function pixivQuery(illustId, currentPage){
       wordwrap: false
     }),
     "url": "https://www.pixiv.net/artworks/"+meta_preload_data['illust'][illustId]['illustId'],
+    "tags": extractTag(meta_preload_data.illust[illustId].tags.tags),
     "name": meta_preload_data['illust'][illustId]['userName'],
     "userId": meta_preload_data['illust'][illustId]['userId'],
     "illustId": illustId,
@@ -122,6 +130,11 @@ function query2msg(data,type){
               "name": "Illust ID",
               "value": "["+data['illustId']+"]("+data['url']+")",
               "inline": true
+            },
+            {
+              "name": "Tags",
+              "value": textArray2str(data.tags, ', '),
+              "inline": false
             }
           ],
           "author": {

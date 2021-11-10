@@ -151,6 +151,17 @@ function makePageRow(data) {
   return pageRow;
 }
 
+function textArray2str(textArray, separator) {
+  if (textArray == null) return [];
+  var s = '';
+  const lastItem = textArray.pop();
+  textArray.forEach((item, i) => {
+    s += item + separator;
+  });
+  s += lastItem;
+  return s;
+}
+
 module.exports = {
   replyConfigMessage,
   pageOffset,
@@ -158,5 +169,6 @@ module.exports = {
   initCmdAll,
   initCmd,
   checkParameterUndfeind,
-  makePageRow
+  makePageRow,
+  textArray2str
 };
