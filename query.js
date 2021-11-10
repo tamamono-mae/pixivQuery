@@ -116,7 +116,7 @@ function query2msg(data,type){
     return {
       "embeds":
         [{
-          "title": data['title']+ (data['pageCount'] > 1 ? (' ('+data['currentPage']+'/'+data['pageCount']+')') : ''),
+          "title": data['title'],
           "description": data['description'],
           "url": data['url'],
           "color": data['xRestrict'] == 0 ? config.colors[0] : config.colors[1],
