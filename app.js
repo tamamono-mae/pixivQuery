@@ -366,7 +366,7 @@ function functionConfig(interaction, props) {
   var logInfo = {
     type: props.opCode,
     sourceId: interaction.id,
-    sourceUserId: interaction.author.id,
+    sourceUserId: interaction.user.id,
     sourceTimestamp: interaction.createdTimestamp,
     sourceContent: interaction.content,
     sourceChannelId: interaction.channel.id,

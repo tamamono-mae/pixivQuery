@@ -2,8 +2,7 @@ const npath = require('path');
 const winston = require('winston');
 const config = require(require("./shareData.js").configPath);
 const arch = require("./architecture.js");
-const initCmdAll = require("./fn.js").initCmdAll;
-const initCmd = require("./fn.js").initCmd;
+const { initCmdAll, initCmd } = require("./fn.js");
 
 //Discordjs fix
 const { Client, Intents } = require('discord.js');
@@ -11,7 +10,6 @@ const client = new Client({
 	intents: [
 		Intents.FLAGS.GUILDS,
 		Intents.FLAGS.GUILD_MESSAGES,
-		Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
 		Intents.FLAGS.DIRECT_MESSAGES
 	]
 });
@@ -144,31 +142,6 @@ client.on('ready', () => {
   setInterval(( () => {
     cacheDb('cacheMsg').where('sourceTimestamp', '<', Date.now()-86400000).del().then(()=>{});
   } ), 600000);
-});
-
-client.on("messageReactionAdd", (messageReaction) => {
-  const start = new Date();
-  messageReaction.rts = start;
-  messageReaction.isDm = (messageReaction.message.channel.type == 'dm');
-  messageReaction.isText = (messageReaction.message.channel.type == 'text');
-	messageReaction.objType = 'reaction';
-  messageReaction.client = client;
-  if (messageReaction.message.author.id != client.user.id) return;
-  messageReaction.reactionCurrentUser = Array.from(messageReaction.users.cache.values());
-  messageReaction.reactionCurrentUser = messageReaction.reactionCurrentUser.pop();
-
-  if (messageReaction.reactionCurrentUser.bot) return;
-  //if (messageReaction.count > 1) messageReaction.users.remove(messageReaction.reactionCurrentUser);
-  arch.setConfig(messageReaction).then(() => {
-    arch.setEmbedMsgCache(messageReaction);
-    if (messageReaction.cacheData == null) throw null;
-  }).then(() => {
-    return arch.reactionRouter(messageReaction);
-  }).then(logArray => {
-    loggerArray(logArray);
-    //const time = new Date() - start;
-    //console.log(time);
-  });
 });
 
 client.on("messageDelete", (message) => {

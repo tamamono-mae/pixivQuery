@@ -1,27 +1,3 @@
-/*
-function replyMessage(messageObject, content) {
-  return new Promise((resolve, reject) => {
-    resolve(messageObject.channel.send(content));
-  })
-}
-*/
-
-function addReaction(messageObject, isMultiPage = false) {
-  return messageObject.fetch().then(replyMessage => {
-    if (isMultiPage) replyMessage.react('⏪');
-    return replyMessage;
-  }).then(replyMessage => {
-    replyMessage.react(messageObject.configReaction);
-    return replyMessage;
-  }).then(replyMessage => {
-    if (isMultiPage) replyMessage.react('⏩');
-    return replyMessage;
-  }).then(replyMessage => {
-    replyMessage.react('🗑️');
-    return replyMessage;
-  })
-}
-
 function replyConfigMessage(messageObject, content, delay = 10) {
   messageObject.channel.send(content)
   .then(replyMessage => {
@@ -49,11 +25,6 @@ function urlDump(content) {
   if (content.match(patt['pixivE']))
     return { "uid" :content.match(patt['pixivE'])[1] , "website": 'pixiv'};
   return null;
-}
-
-function rmReaction(reactionObject) {
-  if (reactionObject.count > 1 && reactionObject.isMessageManager)
-    reactionObject.users.remove(reactionObject.reactionCurrentUser);
 }
 
 async function initCmd(rest, Routes , userID, guildsHandling, commands) {
@@ -183,10 +154,8 @@ function makePageRow(data) {
 
 module.exports = {
   replyConfigMessage,
-  addReaction,
   pageOffset,
   urlDump,
-  rmReaction,
   initCmdAll,
   initCmd,
   checkParameterUndfeind,
