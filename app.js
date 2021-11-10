@@ -66,7 +66,7 @@ async function postImageInfo(messageObject ,props) {
   let replyMessage = await messageObject.channel.send(replyContent);
   //add reaction in background
   replyMessage.configReaction = messageObject.configReaction;
-  fn.addReaction(replyMessage, (queryResult.pageCount > 1));
+  replyMessage.react(messageObject.configReaction);
   var dbWriteData = {
     time: Date.now(),
     sourceId: messageObject.id,
@@ -466,7 +466,7 @@ async function turnPage(interaction, props) {
       queryResult = await q.pixivQuery(dumpResult['uid'], interaction.cacheData.currentPage);
       break;
   }
-  interaction.message.edit({
+  interaction.update({
     embeds: q.query2msg(queryResult,dumpResult['website']).embeds,
     components: [fn.makePageRow(queryResult)]
   });
@@ -540,7 +540,7 @@ async function postUrl(messageObject ,props) {
   let replyMessage = await messageObject.channel.send(props.urlContent);
   //add reaction in background
   replyMessage.configReaction = messageObject.configReaction;
-  fn.addReaction(replyMessage, false);
+  replyMessage.react(messageObject.configReaction);
   dbWriteData = {
     time: Date.now(),
     sourceId: messageObject.id,
