@@ -110,45 +110,39 @@ function makePageRow(data) {
   }
   if (data.pageCount <= 1) return pageRow;
 
-  pageRow.components = [
-    {
-      type: 'BUTTON',
-      label: '<<',
-      customId: 'previousPage',
-      style: 'PRIMARY',
-      emoji: null,
-      url: null,
-      disabled: (data.currentPage <= 1)
-    },
-    {
-      type: 'BUTTON',
-      label: data.currentPage + '/' + data.pageCount,
-      customId: 'page',
-      style: 'SECONDARY',
-      emoji: null,
-      url: null,
-      disabled: true
-    },
-    {
-      type: 'BUTTON',
-      label: '>>',
-      customId: 'nextPage',
-      style: 'PRIMARY',
-      emoji: null,
-      url: null,
-      disabled: (data.currentPage >= data.pageCount)
-    },
-    {
-      type: 'BUTTON',
-      label: '🗑️',
-      customId: 'remove',
-      style: 'DANGER',
-      emoji: null,
-      url: null,
-      disabled: false
-    }
-  ];
-  return pageRow;
+  return {
+    type: 'ACTION_ROW',
+    components: [
+      {
+        type: 'BUTTON',
+        label: '<<',
+        customId: 'previousPage',
+        style: 'PRIMARY',
+        emoji: null,
+        url: null,
+        disabled: (data.currentPage <= 1)
+      },
+      {
+        type: 'BUTTON',
+        label: data.currentPage + '/' + data.pageCount,
+        customId: 'page',
+        style: 'SECONDARY',
+        emoji: null,
+        url: null,
+        disabled: true
+      },
+      {
+        type: 'BUTTON',
+        label: '>>',
+        customId: 'nextPage',
+        style: 'PRIMARY',
+        emoji: null,
+        url: null,
+        disabled: (data.currentPage >= data.pageCount)
+      },
+      pageRow.components[0]
+    ]
+  };
 }
 
 function textArray2str(textArray, separator) {
