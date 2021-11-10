@@ -99,15 +99,6 @@ function makePageRow(data) {
     components: [
       {
         type: 'BUTTON',
-        label: data.currentPage + '/' + data.pageCount,
-        customId: 'page',
-        style: 'SECONDARY',
-        emoji: null,
-        url: null,
-        disabled: true
-      },
-      {
-        type: 'BUTTON',
         label: '🗑️',
         customId: 'remove',
         style: 'DANGER',
@@ -118,37 +109,45 @@ function makePageRow(data) {
     ]
   }
   if (data.pageCount <= 1) return pageRow;
-  var pp = {
-    type: 'BUTTON',
-    label: '<<',
-    customId: 'previousPage',
-    style: 'PRIMARY',
-    emoji: null,
-    url: null,
-    disabled: (data.currentPage <= 1)
-  }
-  var np = {
-    type: 'BUTTON',
-    label: '>>',
-    customId: 'nextPage',
-    style: 'PRIMARY',
-    emoji: null,
-    url: null,
-    disabled: (data.currentPage >= data.pageCount)
-  }
-  var rmp = {
-    type: 'BUTTON',
-    label: '🗑️',
-    customId: 'remove',
-    style: 'DANGER',
-    emoji: null,
-    url: null,
-    disabled: false
-  }
-  pageRow.components.unshift(pp);
-  pageRow.components.pop();
-  pageRow.components.push(np);
-  pageRow.components.push(rmp);
+
+  pageRow.components = [
+    {
+      type: 'BUTTON',
+      label: '<<',
+      customId: 'previousPage',
+      style: 'PRIMARY',
+      emoji: null,
+      url: null,
+      disabled: (data.currentPage <= 1)
+    },
+    {
+      type: 'BUTTON',
+      label: data.currentPage + '/' + data.pageCount,
+      customId: 'page',
+      style: 'SECONDARY',
+      emoji: null,
+      url: null,
+      disabled: true
+    },
+    {
+      type: 'BUTTON',
+      label: '>>',
+      customId: 'nextPage',
+      style: 'PRIMARY',
+      emoji: null,
+      url: null,
+      disabled: (data.currentPage >= data.pageCount)
+    },
+    {
+      type: 'BUTTON',
+      label: '🗑️',
+      customId: 'remove',
+      style: 'DANGER',
+      emoji: null,
+      url: null,
+      disabled: false
+    }
+  ];
   return pageRow;
 }
 
