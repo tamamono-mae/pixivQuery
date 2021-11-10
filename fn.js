@@ -156,6 +156,15 @@ function textArray2str(textArray, separator) {
   return s;
 }
 
+function disableAllButton(interaction) {
+  var newComponents = interaction.message.components;
+  newComponents[0].components.forEach((button) => {
+    button.disabled = true;
+  });
+  interaction.update({ components: newComponents });
+  throw '[ info ] Disable buttons of outdate data';
+}
+
 module.exports = {
   replyConfigMessage,
   pageOffset,
@@ -164,5 +173,6 @@ module.exports = {
   initCmd,
   checkParameterUndfeind,
   makePageRow,
-  textArray2str
+  textArray2str,
+  disableAllButton
 };

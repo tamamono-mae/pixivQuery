@@ -443,7 +443,10 @@ function moduleSwitch(messageObject, props) {
 
 async function turnPage(interaction, props) {
   //fn.rmReaction(reactionObject);
-  var check = false;
+  if(interaction.cacheData == null) { //Disable buttons
+    fn.disableAllButton(interaction);
+  }
+  var check = false; //Check illigal action
   if (
     props.isNext &&
     interaction.cacheData.currentPage < interaction.cacheData.pageCount &&

@@ -80,7 +80,6 @@ client.on('interactionCreate', function(interaction) {
 			return arch.cmdRouter(interaction);
 		if (interaction.isButton()) { //Button interaction
 			return arch.setEmbedMsgCache(interaction).then(() => {
-				if (interaction.cacheData == null) throw 'No data';
 				return arch.btnRouter(interaction);
 			});
 		};
