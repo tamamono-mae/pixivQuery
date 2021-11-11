@@ -118,16 +118,36 @@ function deleteCacheDBData(cacheData) {
   .del().then(()=>{});
 }
 
-async function setEmbedMsgCache(client) {
-  var cacheKey = 'cacheMsg_' + client.message.id + '_' + client.message.channel.id;
-  if (!client.isDm) {
-    cacheKey += '_' + client.message.channel.guild.id;
+async function setEmbedMsgCache(interaction) {
+  var cacheKey = 'cacheMsg_' + interaction.message.id + '_' + interaction.message.channel.id;
+  if (!interaction.isDm) {
+    cacheKey += '_' + interaction.message.channel.guild.id;
   }
-  if (dbCache.get(cacheKey) != null) {
-    client.cacheData = dbCache.get(cacheKey);
-    return;
+  interaction.cacheData = dbCache.get(cacheKey);
+  if (interaction.cacheData != null) return;
+
+  interaction.cacheData = await fetchCache(interaction.message);
+  if(interaction.cacheData != null) return;
+  //Recover data from post
+  var pageValue;
+  interaction.message.components[0].components.forEach(button => {
+  if((button.style == 'SECONDARY') && button.disabled)
+    pageValue = button.label;
+  });
+  pageValue = pageValue.split('/');
+  interaction.cacheData =  {
+    time: new Date(),
+    sourceId: interaction.message.id,
+    sourceUserId: interaction.message.author.id,
+    sourceTimestamp: new Date(),
+    sourceContent: interaction.message.embeds[0].url,
+    sourceChannelId: interaction.channel.id,
+    replyId: interaction.message.id,
+    pageCount: pageValue[1],
+    currentPage: pageValue[0],
+    type: sd.webIcon2Types[interaction.message.embeds[0].author.iconURL],
+    sourceGuildId: interaction.guild.id
   }
-  client.cacheData = await fetchCache(client.message);
 }
 
 module.exports = {

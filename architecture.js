@@ -48,6 +48,7 @@ async function setConfig(client) {
   client.configReaction = reaction;
 }
 
+
 function attachmentSwitchOrder(client) {
   let functionSwitch = client.guildSwitch & client.channelSwitch;
   var returnOrder = [];
@@ -327,7 +328,6 @@ function btnRouter(interaction) {
     }
   ];
   //let matchRoute = route.find((route) => message.match(route.patt));
-
   for (var i=0;i<route.length;i++) {
     let currRoute = route[i];
     if (interaction.customId != currRoute.patt) continue;
@@ -338,7 +338,7 @@ function btnRouter(interaction) {
     }
     let checkPermissionResult = permissionCheckUser(
       interaction, currRoute.varExt.opCode,
-      interaction.user.id
+      interaction.cacheData.sourceUserId // this should use author id
     );
     if (!checkPermissionResult) throw new Error("Permission denied");
     checkPermissionResult = permissionCheckBot(interaction);

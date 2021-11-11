@@ -420,28 +420,6 @@ function moduleSwitch(messageObject, props) {
 }
 
 async function turnPage(interaction, props) {
-  await dbop.setEmbedMsgCache(interaction);
-  if(interaction.cacheData == null) { //Recover data from post
-    var pageValue;
-    interaction.message.components[0].components.forEach(button => {
-      if((button.style == 'SECONDARY') && button.disabled)
-        pageValue = button.label;
-    });
-    pageValue = pageValue.split('/');
-    interaction.cacheData =  {
-      time: new Date(),
-      sourceId: interaction.message.id,
-      sourceUserId: interaction.message.author.id,
-      sourceTimestamp: new Date(),
-      sourceContent: interaction.message.embeds[0].url,
-      sourceChannelId: interaction.channel.id,
-      replyId: interaction.message.id,
-      pageCount: pageValue[1],
-      currentPage: pageValue[0],
-      type: sd.webIcon2Types[interaction.message.embeds[0].author.iconURL],
-      sourceGuildId: interaction.guild.id
-    }
-  }
   var check = false; //Check illigal action
   if (
     props.isNext &&
@@ -492,7 +470,6 @@ async function turnPage(interaction, props) {
 }
 
 async function removeEmbedMsg(interaction, props) {
-  await dbop.setEmbedMsgCache(interaction);
   let srcMessage = interaction.message;
   const cacheData = interaction.cacheData;
   const isDm = interaction.isDm;

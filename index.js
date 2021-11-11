@@ -3,6 +3,7 @@ const winston = require('winston');
 const config = require(require("./shareData.js").configPath);
 const arch = require("./architecture.js");
 const { initCmdAll, initCmd } = require("./fn.js");
+const { setEmbedMsgCache } = require("./dbOperation.js");
 
 //Discordjs fix
 const { Client, Intents } = require('discord.js');
@@ -79,7 +80,9 @@ client.on('interactionCreate', function(interaction) {
 		if (interaction.isCommand()) //Command interaction
 			return arch.cmdRouter(interaction);
 		if (interaction.isButton()) { //Button interaction
-			return arch.btnRouter(interaction);
+			return setEmbedMsgCache(interaction).then(() => {
+				return arch.btnRouter(interaction);
+			});
 		};
 	}).then(logArray => {
 		loggerArray(logArray);
@@ -137,6 +140,7 @@ client.on('ready', () => {
   console.info(`[ info ] Logged in as ${client.user.tag}!`);
 	initCmdAll(client);
   setInterval(( () => {
+		initCmdAll(client);
     cacheDb('cacheMsg').where('sourceTimestamp', '<', Date.now()-86400000).del().then(()=>{});
   } ), 600000);
 });
