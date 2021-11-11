@@ -98,6 +98,14 @@ const helpEmbed = {
   }
 };
 
+const webIcons = {
+  pixiv: "https://i.imgur.com/TXMzn64.png"
+}
+
+const webIcon2Types = {
+  "https://i.imgur.com/TXMzn64.png": "pixiv"
+}
+
 module.exports = {
   configPath,
   opProps,
@@ -105,5 +113,7 @@ module.exports = {
   moduleName,
   commands,
   permission,
-  helpEmbed
+  helpEmbed,
+  webIcons,
+  webIcon2Types
 };

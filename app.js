@@ -218,17 +218,6 @@ function setReaction(interaction, props) {
 }
 
 function dmModuleStatus(messageObject ,props) {
-  /*
-  var statusMsg = {
-    "embed": {
-    "title": "Status for modules in ",
-    "description": "",
-    "color": props.color,
-    "thumbnail": {
-      "url": props.thumbnail
-    }
-  }};
-  */
   var statusEmbed = {
     "title": "Status for modules in ",
     "description": "",
@@ -268,19 +257,8 @@ function dmModuleStatus(messageObject ,props) {
 }
 
 function functionStatus(interaction ,props) {
-  /*
-  var statusMsg = {
-    "embed": {
-    "title": "Status for modules in ",
-    "description": "",
-    "color": props.color,
-    "thumbnail": {
-      "url": props.thumbnail
-    }
-  }};
-  */
   var statusEmbed = {
-    "title": "Status for modules in ",
+    "title": "Status for function in ",
     "description": "",
     "color": props.color,
     "thumbnail": {
@@ -442,10 +420,27 @@ function moduleSwitch(messageObject, props) {
 }
 
 async function turnPage(interaction, props) {
-  //fn.rmReaction(reactionObject);
   await dbop.setEmbedMsgCache(interaction);
-  if(interaction.cacheData == null) { //Disable buttons
-    fn.disableAllButton(interaction);
+  if(interaction.cacheData == null) { //Recover data from post
+    var pageValue;
+    interaction.message.components[0].components.forEach(button => {
+      if((button.style == 'SECONDARY') && button.disabled)
+        pageValue = button.label;
+    });
+    pageValue = pageValue.split('/');
+    interaction.cacheData =  {
+      time: new Date(),
+      sourceId: interaction.message.id,
+      sourceUserId: interaction.message.author.id,
+      sourceTimestamp: new Date(),
+      sourceContent: interaction.message.embeds[0].url,
+      sourceChannelId: interaction.channel.id,
+      replyId: interaction.message.id,
+      pageCount: pageValue[1],
+      currentPage: pageValue[0],
+      type: sd.webIcon2Types[interaction.message.embeds[0].author.iconURL],
+      sourceGuildId: interaction.guild.id
+    }
   }
   var check = false; //Check illigal action
   if (
@@ -496,15 +491,13 @@ async function turnPage(interaction, props) {
   return [logInfo];
 }
 
-async function removeEmbedMsg(reactionObject, props) {
-  await dbop.setEmbedMsgCache(reactionObject);
-  let srcMessage =
-  reactionObject.client.channels.cache.get(reactionObject.cacheData.sourceChannelId)
-  .messages.cache.get(reactionObject.cacheData.sourceId);
-  const cacheData = reactionObject.cacheData;
-  const isDm = reactionObject.isDm;
+async function removeEmbedMsg(interaction, props) {
+  await dbop.setEmbedMsgCache(interaction);
+  let srcMessage = interaction.message;
+  const cacheData = interaction.cacheData;
+  const isDm = interaction.isDm;
   /*
-  if (srcMessage != null && reactionObject.isMessageManager)
+  if (srcMessage != null && interaction.isMessageManager)
     srcMessage.suppressEmbeds(false);
   */
   dbop.deleteCacheDBData(cacheData);
@@ -514,22 +507,22 @@ async function removeEmbedMsg(reactionObject, props) {
   }
   dbCache.del(cacheKey);
 
-  let rreactionObject = {
-    reactionCurrentUser: reactionObject.reactionCurrentUser,
-    isDm: reactionObject.isDm,
-    rts: reactionObject.rts
+  let rinteraction = {
+    reactionCurrentUser: interaction.reactionCurrentUser,
+    isDm: interaction.isDm,
+    rts: interaction.rts
   }
-  let replyMessage = await reactionObject.message.delete();
+  let replyMessage = await interaction.message.delete();
 
   var logInfo = {
     type: props.opCode,
     sourceId: replyMessage.id,
-    sourceUserId: rreactionObject.reactionCurrentUser,
-    sourceTimestamp: rreactionObject.rts,
+    sourceUserId: rinteraction.reactionCurrentUser,
+    sourceTimestamp: rinteraction.rts,
     sourceContent: replyMessage.embeds[0],
     sourceChannelId: replyMessage.channel.id,
   };
-  if (!rreactionObject.isDm)
+  if (!rinteraction.isDm)
     logInfo.sourceGuildId = replyMessage.guild.id;
   return [logInfo];
 }

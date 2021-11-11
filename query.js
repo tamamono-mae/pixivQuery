@@ -5,6 +5,7 @@ const { htmlToText } = require('html-to-text');
 const config = require(require("./shareData.js").configPath);
 const webCache = require('memory-cache');
 const { textArray2str } = require('./fn.js');
+const { webIcons } = require("./shareData.js");
 
 async function checkUrls(urlArr) {
   for(var i=0;i<urlArr.length;i++) {
@@ -140,7 +141,7 @@ function query2msg(data,type){
           "author": {
             "name": data['name'],
             "url": "https://www.pixiv.net/users/"+data['userId'],
-            "icon_url": "https://i.imgur.com/TXMzn64.png"
+            "icon_url": webIcons.pixiv
           },
           "timestamp": data['timestamp'],
           "image": {
