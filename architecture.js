@@ -340,7 +340,10 @@ function btnRouter(interaction) {
       interaction, currRoute.varExt.opCode,
       interaction.cacheData.sourceUserId // this should use author id
     );
-    if (!checkPermissionResult) throw new Error("Permission denied");
+    if (!checkPermissionResult) {
+      interaction.update({});
+      throw "[ info ] User permission denied";
+    };
     checkPermissionResult = permissionCheckBot(interaction);
     if (!checkPermissionResult[0]) throw new Error("Permission of bot denied, exit!");
     interaction.isMessageManager = checkPermissionResult[1];
