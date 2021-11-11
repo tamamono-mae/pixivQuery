@@ -17,6 +17,8 @@ const configDb = require('knex')({
   useNullAsDefault: true
 });
 
+const dbCache = require('memory-cache');
+
 function fetchCache(messageObject) {
   return cacheDb('cacheMsg')
   .where('sourceChannelId', messageObject.channel.id)
@@ -116,11 +118,24 @@ function deleteCacheDBData(cacheData) {
   .del().then(()=>{});
 }
 
+async function setEmbedMsgCache(client) {
+  var cacheKey = 'cacheMsg_' + client.message.id + '_' + client.message.channel.id;
+  if (!client.isDm) {
+    cacheKey += '_' + client.message.channel.guild.id;
+  }
+  if (dbCache.get(cacheKey) != null) {
+    client.cacheData = dbCache.get(cacheKey);
+    return;
+  }
+  client.cacheData = await fetchCache(client.message);
+}
+
 module.exports = {
   fetchCache,
   fetchConfig,
   toCacheDB,
   toConfigDB,
   updateCurrentPage,
-  deleteCacheDBData
+  deleteCacheDBData,
+  setEmbedMsgCache
 };

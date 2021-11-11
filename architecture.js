@@ -24,18 +24,6 @@ let switchOrderList = [
   }
 ];
 
-async function setEmbedMsgCache(client) {
-  var cacheKey = 'cacheMsg_' + client.message.id + '_' + client.message.channel.id;
-  if (!client.isDm) {
-    cacheKey += '_' + client.message.channel.guild.id;
-  }
-  if (dbCache.get(cacheKey) != null) {
-    client.cacheData = dbCache.get(cacheKey);
-    return;
-  }
-  client.cacheData = await dbop.fetchCache(client.message);
-}
-
 async function setConfig(client) {
   let messageObj = (client.message == null) ?
   client : client.message;
@@ -371,7 +359,6 @@ function btnRouter(interaction) {
 }
 
 module.exports = {
-  setEmbedMsgCache,
   setConfig,
   msgRouter,
   cmdRouter,

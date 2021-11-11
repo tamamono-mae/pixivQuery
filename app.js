@@ -443,6 +443,7 @@ function moduleSwitch(messageObject, props) {
 
 async function turnPage(interaction, props) {
   //fn.rmReaction(reactionObject);
+  await dbop.setEmbedMsgCache(interaction);
   if(interaction.cacheData == null) { //Disable buttons
     fn.disableAllButton(interaction);
   }
@@ -496,6 +497,7 @@ async function turnPage(interaction, props) {
 }
 
 async function removeEmbedMsg(reactionObject, props) {
+  await dbop.setEmbedMsgCache(reactionObject);
   let srcMessage =
   reactionObject.client.channels.cache.get(reactionObject.cacheData.sourceChannelId)
   .messages.cache.get(reactionObject.cacheData.sourceId);

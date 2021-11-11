@@ -79,9 +79,7 @@ client.on('interactionCreate', function(interaction) {
 		if (interaction.isCommand()) //Command interaction
 			return arch.cmdRouter(interaction);
 		if (interaction.isButton()) { //Button interaction
-			return arch.setEmbedMsgCache(interaction).then(() => {
-				return arch.btnRouter(interaction);
-			});
+			return arch.btnRouter(interaction);
 		};
 	}).then(logArray => {
 		loggerArray(logArray);
