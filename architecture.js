@@ -166,12 +166,6 @@ function permissionCheckUser(client, opCode, authorId = '0') {
           | (client.user.id == authorId ? 0x4:0)
           | 0x3) & sd.opProps[opCode]['perm'];
       break;
-      case 'reaction':
-        p = ((client.message.channel.guild.ownerID == client.reactionCurrentUser.id ? 0x10:0)
-          | (client.message.channel.permissionsFor(client.reactionCurrentUser).has(sd.permission.userManageMassage) ? 0x8:0)
-          | (client.users.cache.has(authorId) ? 0x4:0)
-          | 0x3) & sd.opProps[opCode]['perm'];
-      break;
     }
   } else {
     p = ((client.objType == 'message') ? 0x1 : 0x5) & sd.opProps[opCode]['perm'];
