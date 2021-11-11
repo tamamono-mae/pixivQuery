@@ -107,10 +107,9 @@ client.on("messageCreate", function(srcMessage) {
 	initCmdAll(client);
 	if (Array.from(srcMessage.attachments.values()).length == 0) {
     /*// TODO:
-    help增加reaction顯示
-    pixiv增加tag欄位
-    增加重置設定功能
-    增加Reaction全域設定
+		Change calculate method of permission verification
+		Add reaction setting display in help message
+    Add reset all setting command
     */
     arch.setConfig(srcMessage).then(() => {
       return arch.msgRouter(srcMessage);
