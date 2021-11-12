@@ -27,7 +27,7 @@ function urlDump(content) {
   return null;
 }
 
-async function initCmd(rest, Routes , userID, guildsHandling, commands) {
+async function initGuildCmd(rest, Routes , userID, guildsHandling, commands) {
   try {
     await rest.put(
       Routes.applicationGuildCommands(userID, guildsHandling),
@@ -48,6 +48,26 @@ async function initCmd(rest, Routes , userID, guildsHandling, commands) {
   }
 }
 
+async function initGlobalCmd(client) {
+  //Initilize const
+  const config = require(require("./shareData.js").configPath);
+  const { Routes } = require('discord-api-types/v9');
+  const { REST } = require('@discordjs/rest');
+  const rest = new REST({ version: '9' }).setToken(config.BOT_TOKEN);
+  const { globalCommands } = require("./shareData.js");
+  //Initilize commands
+  console.log(`[ info ] Initilizing commands ...`);
+  try {
+    await rest.put(
+      Routes.applicationCommands(config.userID),
+      { body: globalCommands }
+    );
+    console.log(`[ info ] Initilizing guild commands finished.`);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 async function initCmdAll(client) {
   //Check first
   if (client.guildsHandling == null) client.guildsHandling = [];
@@ -65,22 +85,22 @@ async function initCmdAll(client) {
   const { Routes } = require('discord-api-types/v9');
   const { REST } = require('@discordjs/rest');
   const rest = new REST({ version: '9' }).setToken(config.BOT_TOKEN);
-  const commands = require("./shareData.js").commands;
+  const { commands } = require("./shareData.js");
   const permissionManage = require("./shareData.js").permission.botManageMassage;
   //Initilize commands
-  console.log(`[ info ] Initilize commands ...`);
+  console.log(`[ info ] Initilizing guild commands ...`);
   var promisePool = [];
   //Make a task array for multi-tasking.
   for (var i=0; i<guildsNew.length; i++) {
     promisePool.push(
-      initCmd(rest, Routes, client.user.id, guildsNew[i], commands)
+      initGuildCmd(rest, Routes, config.userID, guildsNew[i], commands)
     );
   }
   //Launch tasks.
   await Promise.all(promisePool);
   //Register handling guilds.
   client.guildsHandling = guildsShouldHandle;
-  console.log(`[ info ] Initilize commands finished.`);
+  console.log(`[ info ] Initilizing guild commands finished.`);
 }
 
 function checkParameterUndfeind(interaction, varKey) {
@@ -156,13 +176,45 @@ function textArray2str(textArray, separator) {
   return s;
 }
 
-function disableAllButton(interaction) {
-  var newComponents = interaction.message.components;
-  newComponents[0].components.forEach((button) => {
-    button.disabled = true;
-  });
-  interaction.update({ components: newComponents });
-  throw '[ info ] Disable buttons of outdate data';
+function preFilter(interaction) {
+  if(interaction.user.bot) return 'userIsBot';
+  if(interaction.channel == null) return 'dmChannel';
+  if (!(
+    (interaction.channel.type == 'GUILD_TEXT') ||
+    (interaction.channel.type == 'GUILD_PUBLIC_THREAD') ||
+    (interaction.channel.type == 'GUILD_PRIVATE_THREAD')
+  )) return 'notTextChannel';
+  return 'pass';
+}
+
+function rejectInteration(interaction, reason) {
+  switch(reason) {
+    case 'pass':
+      return false;
+    case 'buttonPermission':
+      interaction.update({});
+    break;
+    case 'userIsBot':
+      interaction.reply({
+        content: 'All bots cannot use this application  !',
+        ephemeral: true
+      });
+    break;
+    case 'dmChannel':
+      interaction.reply({
+        content: 'This application is design for guilds !',
+        ephemeral: true
+      });
+    break;
+    case 'notTextChannel':
+      interaction.reply({
+        content: 'This application can not be use in non-text channel !',
+        ephemeral: true
+      });
+    break;
+
+  }
+  return true;
 }
 
 module.exports = {
@@ -170,9 +222,10 @@ module.exports = {
   pageOffset,
   urlDump,
   initCmdAll,
-  initCmd,
+  initGlobalCmd,
   checkParameterUndfeind,
   makePageRow,
   textArray2str,
-  disableAllButton
+  preFilter,
+  rejectInteration
 };

@@ -4,7 +4,7 @@ const a = require("./app.js");
 const sd = require("./shareData.js");
 const dbop = require("./dbOperation.js");
 const dbCache = require('memory-cache');
-const checkParameterUndfeind = require('./fn.js').checkParameterUndfeind;
+const { checkParameterUndfeind, rejectInteration } = require('./fn.js');
 
 let switchOrderList = [
   {
@@ -341,7 +341,7 @@ function btnRouter(interaction) {
       interaction.cacheData.sourceUserId // this should use author id
     );
     if (!checkPermissionResult) {
-      interaction.update({});
+      rejectInteration(interaction, 'buttonPermission');
       throw "[ info ] User permission denied";
     };
     checkPermissionResult = permissionCheckBot(interaction);

@@ -27,15 +27,15 @@ let opProps = {
   // 1 1 1 1 1
 }
 
-let commands = [
+const commands = [
   {
     name: 'help',
-    description: 'Show all available commands.',
+    description: 'Showing all available commands.',
     defaultPermission: undefined
   },
   {
     name: 'status',
-    description: 'Show configuration of current channal and guild.',
+    description: 'Showing configuration of current channal and guild.',
     defaultPermission: undefined
   },
   {
@@ -65,18 +65,26 @@ let commands = [
       },
     ],
     name: 'fn',
-    description: 'Turn on or close a function.',
+    description: 'Activing or deactiving a function.',
     defaultPermission: undefined
   },
   {
     options: [{
       name: 'reaction',
-      description: 'The gif category',
+      description: 'Reaction',
       required: true,
       type: 3
     }],
     name: 'set-reaction',
-    description: 'Assign a reaction to result.',
+    description: 'Assigning a reaction to result.',
+    defaultPermission: undefined
+  }
+]
+
+const globalCommands = [
+  {
+    name: 'initilize',
+    description: 'Registering slash commands in current guild.',
     defaultPermission: undefined
   }
 ]
@@ -112,6 +120,7 @@ module.exports = {
   functionName,
   moduleName,
   commands,
+  globalCommands,
   permission,
   helpEmbed,
   webIcons,

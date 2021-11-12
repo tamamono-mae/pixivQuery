@@ -2,7 +2,9 @@ const npath = require('path');
 const winston = require('winston');
 const config = require(require("./shareData.js").configPath);
 const arch = require("./architecture.js");
-const { initCmdAll, initCmd } = require("./fn.js");
+const {
+	initCmdAll, initCmd, initGlobalCmd, preFilter, rejectInteration
+} = require("./fn.js");
 const { setEmbedMsgCache } = require("./dbOperation.js");
 
 //Discordjs fix
@@ -67,15 +69,9 @@ client.login(config.BOT_TOKEN);
 client.on('interactionCreate', function(interaction) {
   const start = new Date();
 	interaction.rts = start;
-  interaction.isDm = (interaction.channel.type == 'dm');
-  interaction.isText = (
-    (interaction.channel.type == 'GUILD_TEXT') ||
-    (interaction.channel.type == 'GUILD_PUBLIC_THREAD') ||
-    (interaction.channel.type == 'GUILD_PRIVATE_THREAD')
-  );
-  interaction.objType = 'commandInteraction';
-  //console.log(interaction.channel);
-  if (interaction.user.bot || !(interaction.isDm || interaction.isText)) return;
+	interaction.objType = 'commandInteraction';
+	let reason = preFilter(interaction);
+	if(rejectInteration(interaction, reason)) return;
 	arch.setConfig(interaction).then(() => {
 		if (interaction.isCommand()) //Command interaction
 			return arch.cmdRouter(interaction);
@@ -104,7 +100,6 @@ client.on("messageCreate", function(srcMessage) {
   );
 	srcMessage.objType = 'message';
   if (srcMessage.author.bot || !(srcMessage.isDm || srcMessage.isText)) return;
-	initCmdAll(client);
 	if (Array.from(srcMessage.attachments.values()).length == 0) {
     /*// TODO:
 		Change calculate method of permission verification
@@ -138,6 +133,7 @@ client.on("messageCreate", function(srcMessage) {
 client.on('ready', () => {
   console.info(`[ info ] Logged in as ${client.user.tag}!`);
 	initCmdAll(client);
+	initGlobalCmd(client);
   setInterval(( () => {
 		initCmdAll(client);
     cacheDb('cacheMsg').where('sourceTimestamp', '<', Date.now()-86400000).del().then(()=>{});
