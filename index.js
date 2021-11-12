@@ -102,6 +102,8 @@ client.on("messageCreate", function(srcMessage) {
   if (srcMessage.author.bot || !(srcMessage.isDm || srcMessage.isText)) return;
 	if (Array.from(srcMessage.attachments.values()).length == 0) {
     /*// TODO:
+		Add initilize command
+		Add cooldown function
 		Change calculate method of permission verification
 		Add reaction setting display in help message
     Add reset all setting command

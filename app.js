@@ -27,7 +27,7 @@ async function postImageInfo(messageObject ,props) {
   /* Remove Cache */
   const imgCacheKey = 'cache.'+encodeURIComponent(replyContent.embeds[0].image.url);
   if (!dbCache.get(imgCacheKey)) {
-    console.log('Caching ' + replyContent.embeds[0].image.url);
+    console.info('Caching ' + replyContent.embeds[0].image.url);
     //let body = await fetch(replyContent.embed.image.url);
     //console.log(messageObject.client);
     //const cacheChannel = messageObject.client.channels.cache;
@@ -52,9 +52,9 @@ async function postImageInfo(messageObject ,props) {
 
     const resJson = await fetch("https://api.imgur.com/3/upload", requestOptions)
       .then(response => response.json())
-      .catch(error => console.log('error', error));
+      .catch(error => console.error('error', error));
 
-    console.log('Cached');
+    console.info('Cached');
     dbCache.put(imgCacheKey, resJson.data.link);
   }
   replyContent.embeds[0].image.url = dbCache.get(imgCacheKey);
@@ -317,9 +317,9 @@ function functionConfig(interaction, props) {
     });
     throw new Error('[ info ] Incorrect function name');
   }
-  props.isGlobal = interaction.options.get('globally').value;
+  props.isDefault = interaction.options.get('default').value;
   props.operation = interaction.options.get('enable').value;
-  let functionSwitch = (props.isGlobal) ? interaction.guildSwitch : interaction.channelSwitch;
+  let functionSwitch = (props.isDefault) ? interaction.guildSwitch : interaction.channelSwitch;
   if (props.operation ==
     ((
       (functionSwitch >> sd.opProps[props.function]['bit'] & 1)
@@ -339,7 +339,7 @@ function functionConfig(interaction, props) {
     content: interaction.options.get('name').value + (props.operation ?   ' 🇴 🇳' : ' 🇴 🇫 🇫'),
     ephemeral: true
   });
-  dbop.toConfigDB(interaction, writeData, props.isGlobal);
+  dbop.toConfigDB(interaction, writeData, props.isDefault);
 
   var logInfo = {
     type: props.opCode,
@@ -353,7 +353,7 @@ function functionConfig(interaction, props) {
   logInfo.operation =
     props.function +
     (props.operation ? ' enable' : ' disable') +
-    (props.isGlobal ? ' global' : '');
+    (props.isDefault ? ' global' : '');
   return [logInfo];
 }
 
@@ -375,9 +375,9 @@ function moduleSwitch(messageObject, props) {
     );
     throw new Error('[ info ] Incorrect module name');
   }
-  props.isGlobal = (props.isGlobal != null);
+  props.isDefault = (props.isDefault != null);
   props.operation = (props.operation.match(/enable/i) != null);
-  let functionSwitch = (props.isGlobal) ? messageObject.guildSwitch : messageObject.channelSwitch;
+  let functionSwitch = (props.isDefault) ? messageObject.guildSwitch : messageObject.channelSwitch;
   if (props.operation ==
     ((
       (functionSwitch >> sd.opProps[props.module]['bit'] & 1)
@@ -401,7 +401,7 @@ function moduleSwitch(messageObject, props) {
     ' 🇴 🇳' : ' 🇴 🇫 🇫'),
     config.deleteMessageDelay
   );
-  dbop.toConfigDB(messageObject, writeData, props.isGlobal);
+  dbop.toConfigDB(messageObject, writeData, props.isDefault);
 
   var logInfo = {
     type: props.opCode,
@@ -415,7 +415,7 @@ function moduleSwitch(messageObject, props) {
   logInfo.operation =
     props.module +
     (props.operation ? ' enable' : ' disable') +
-    (props.isGlobal ? ' global' : '');
+    (props.isDefault ? ' global' : '');
   return [logInfo];
 }
 

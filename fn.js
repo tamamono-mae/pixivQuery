@@ -36,7 +36,7 @@ async function initGuildCmd(rest, Routes , userID, guildsHandling, commands) {
   } catch (error) {
     switch( error.rawError.code ) {
       case 50001:
-        console.error(
+        console.warn(
           "[ warn ] Guild ID = " +
           guildsHandling +
           ": Cannot update slash command without 'applications.commands' scope."
@@ -56,13 +56,13 @@ async function initGlobalCmd(client) {
   const rest = new REST({ version: '9' }).setToken(config.BOT_TOKEN);
   const { globalCommands } = require("./shareData.js");
   //Initilize commands
-  console.log(`[ info ] Initilizing commands ...`);
+  console.info(`[ info ] Initilizing commands ...`);
   try {
     await rest.put(
       Routes.applicationCommands(config.userID),
       { body: globalCommands }
     );
-    console.log(`[ info ] Initilizing guild commands finished.`);
+    console.info(`[ info ] Initilizing guild commands finished.`);
   } catch (error) {
     console.error(error);
   }
@@ -88,7 +88,7 @@ async function initCmdAll(client) {
   const { commands } = require("./shareData.js");
   const permissionManage = require("./shareData.js").permission.botManageMassage;
   //Initilize commands
-  console.log(`[ info ] Initilizing guild commands ...`);
+  console.info(`[ info ] Initilizing guild commands ...`);
   var promisePool = [];
   //Make a task array for multi-tasking.
   for (var i=0; i<guildsNew.length; i++) {
@@ -100,7 +100,7 @@ async function initCmdAll(client) {
   await Promise.all(promisePool);
   //Register handling guilds.
   client.guildsHandling = guildsShouldHandle;
-  console.log(`[ info ] Initilizing guild commands finished.`);
+  console.info(`[ info ] Initilizing guild commands finished.`);
 }
 
 function checkParameterUndfeind(interaction, varKey) {
@@ -212,7 +212,19 @@ function rejectInteration(interaction, reason) {
         ephemeral: true
       });
     break;
-
+    case 'userPermission':
+      interaction.reply({
+        content: 'Permission denied !',
+        ephemeral: true
+      });
+    break;
+    case 'botPermission':
+      console.warn(
+        'Bot permission error in guild: ' +
+        interaction.guild.id + ' ' +
+        interaction.guild.name
+      );
+    break;
   }
   return true;
 }

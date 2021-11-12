@@ -99,6 +99,12 @@ function adminCommandSwitchOrder(interaction) {
         action: a.functionConfig,
         varKey: [ 'name', 'enable' ],
         varExt: { opCode: "functionConfig" }
+      },
+      {
+        cmd: 'initilize',
+        action: a.initCmdAll,
+        varKey: [],
+        varExt: { opCode: "initilize" }
       }
     ];
   return [];
@@ -206,9 +212,15 @@ function cmdRouter(interaction) {
     }
     //Check permission
     let checkPermissionResult = permissionCheckUser(interaction, currRoute.varExt.opCode);
-    if (!checkPermissionResult) throw new Error("[ warn ] Permission denied.");
+    if (!checkPermissionResult) {
+      rejectInteration(interaction, 'userPermission');
+      return;
+    };
     checkPermissionResult = permissionCheckBot(interaction);
-    if (!checkPermissionResult[0]) throw new Error("[ warn ] Permission of bot denied, exit!");
+    if (!checkPermissionResult[0]) {
+      rejectInteration(interaction, 'botPermission');
+      return;
+    };
     //Check parameter exist
     var parameterUndfeind = checkParameterUndfeind(interaction, route[i].varKey);
     if(parameterUndfeind.length > 0) {
@@ -218,7 +230,7 @@ function cmdRouter(interaction) {
         errorString += parameterUndfeind[j] + ', ';
       }
       errorString += parameterUndfeind[++j];
-      throw new Error(errorString);
+      throw errorString;
     }
     //pre-process 2
     interaction.isMessageManager = checkPermissionResult[1];
@@ -342,7 +354,8 @@ function btnRouter(interaction) {
     );
     if (!checkPermissionResult) {
       rejectInteration(interaction, 'buttonPermission');
-      throw "[ info ] User permission denied";
+      console.info("[ info ] User permission denied");
+      return;
     };
     checkPermissionResult = permissionCheckBot(interaction);
     if (!checkPermissionResult[0]) throw new Error("Permission of bot denied, exit!");

@@ -58,8 +58,8 @@ const commands = [
         type: 5
       },
       {
-        name: 'globally',
-        description: 'Operation globally or not.',
+        name: 'default',
+        description: 'Modifying default setting.',
         required: true,
         type: 5
       },
