@@ -105,6 +105,12 @@ function adminCommandSwitchOrder(interaction) {
         action: a.initCmdAll,
         varKey: [],
         varExt: { opCode: "initilize" }
+      },
+      {
+        cmd: 'manager',
+        action: a.managerRoleOp,
+        varKey: [ 'action', 'role' ],
+        varExt: { opCode: "managerRoleOp" }
       }
     ];
   return [];

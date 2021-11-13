@@ -27,7 +27,39 @@ function urlDump(content) {
   return null;
 }
 
-async function initGuildCmd(rest, Routes , userID, guildsHandling, commands) {
+async function initGuildCmd(
+  rest, Routes , userID,
+  guildsHandling, guild,
+  commands, permissionManage) {
+  var roleData = [];
+  guild.roles.cache.forEach((role, id) => {
+    let isNotBot = (role.tags == null) ? true : (role.tags.botId == null);
+    if(isNotBot) console.log(role.name);
+    if(role.permissions.has(8192n) && isNotBot) roleData.push(role.id);
+  });
+  console.log(roleData);
+
+  commands.forEach((command, i) => {
+    command.permissions = [];
+    command.permissions.push(
+      {
+        id: guild.ownerID,
+        type: 'USER',
+        permission: true,
+      }
+    );
+    roleData.forEach((roleID, i) => {
+      command.permissions.push(
+        {
+          id: roleID,
+          type: 'ROLE',
+          permission: true,
+        }
+      );
+    });
+
+  });
+
   try {
     await rest.put(
       Routes.applicationGuildCommands(userID, guildsHandling),
@@ -71,7 +103,8 @@ async function initGlobalCmd(client) {
 async function initCmdAll(client) {
   //Check first
   if (client.guildsHandling == null) client.guildsHandling = [];
-  const guildsShouldHandle = Array.from(client.guilds.cache.keys());
+  const guildCache = client.guilds.cache;
+  const guildsShouldHandle = Array.from(guildCache.keys());
   const guildsNew = guildsShouldHandle.filter(
     values => !client.guildsHandling.includes(values)
   );
@@ -86,14 +119,18 @@ async function initCmdAll(client) {
   const { REST } = require('@discordjs/rest');
   const rest = new REST({ version: '9' }).setToken(config.BOT_TOKEN);
   const { commands } = require("./shareData.js");
-  const permissionManage = require("./shareData.js").permission.botManageMassage;
+  const permissionManage = require("./shareData.js").permission.userManageMassage;
   //Initilize commands
   console.info(`[ info ] Initilizing guild commands ...`);
   var promisePool = [];
   //Make a task array for multi-tasking.
   for (var i=0; i<guildsNew.length; i++) {
     promisePool.push(
-      initGuildCmd(rest, Routes, config.userID, guildsNew[i], commands)
+      initGuildCmd(
+        rest, Routes, config.userID,
+        guildsNew[i], guildCache.get(guildsNew[i]),
+        commands, permissionManage
+      )
     );
   }
   //Launch tasks.

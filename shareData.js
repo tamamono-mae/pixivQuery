@@ -20,6 +20,8 @@ let opProps = {
   "moduleSwitch": { perm: 0x18 },
   "functionConfig": { perm: 0x18 },
   "setReaction": { perm: 0x18 },
+  "initilize": { perm: 0x18 },
+  "managerRoleOp": { perm: 0x18 },
   // 1 1 0 0 0
   "removeEmbedMsg": { perm: 0x1C },
   // 1 1 1 0 0
@@ -31,12 +33,12 @@ const commands = [
   {
     name: 'help',
     description: 'Showing all available commands.',
-    defaultPermission: undefined
+    defaultPermission: false
   },
   {
     name: 'status',
     description: 'Showing configuration of current channal and guild.',
-    defaultPermission: undefined
+    defaultPermission: false
   },
   {
     options: [
@@ -66,7 +68,7 @@ const commands = [
     ],
     name: 'fn',
     description: 'Activing or deactiving a function.',
-    defaultPermission: undefined
+    defaultPermission: false
   },
   {
     options: [{
@@ -77,7 +79,30 @@ const commands = [
     }],
     name: 'set-reaction',
     description: 'Assigning a reaction to result.',
-    defaultPermission: undefined
+    defaultPermission: false
+  },
+  {
+    options: [
+      {
+        name: 'action',
+        description: 'Action',
+        required: true,
+        type: 3,
+        choices: [
+          { name: 'Add', value: 'true' },
+          { name: 'Remove', value: '' }
+        ]
+      },
+      {
+        name: 'role',
+        description: 'Role',
+        required: true,
+        type: 8
+      }
+    ],
+    name: 'manager',
+    description: 'Add or remove a role that can modify this application.',
+    defaultPermission: false
   }
 ]
 
