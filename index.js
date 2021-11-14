@@ -137,7 +137,6 @@ client.on("messageCreate", function(srcMessage) {
 client.on('ready', () => {
   console.info(`[ info ] Logged in as ${client.user.tag}!`);
 	initCmdAll(client);
-	initGlobalCmd(client); //Useless
 	setInterval(( () => {
 		initCmdAll(client);
   } ), 3600000);

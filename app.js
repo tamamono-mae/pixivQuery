@@ -623,13 +623,14 @@ async function registerCommand(interaction, props) {
 
 async function managerRoleOp(interaction, props) {
   let targetRole = interaction.options.get('role').value;
+  let roleList = await dbop.getManagerRole(interaction.guild.id);
   switch(interaction.options.get('action').value) {
     case 'add':
       if(!interaction.guild.roles.cache.has(targetRole)){
         fn.rejectInteration(interaction, 'roleNotInGuild');
         return;
       }
-      if(await dbop.managerRoleHas(interaction)){
+      if(roleList.includes(targetRole)){
         fn.rejectInteration(interaction, 'roleExistInDb');
         return;
       }
@@ -638,9 +639,10 @@ async function managerRoleOp(interaction, props) {
         content: 'This role has been manager now.',
         ephemeral: true
       });
+      roleList.push(targetRole);
     break;
     case 'remove':
-      if(!(await dbop.managerRoleHas(interaction))){
+      if(!roleList.includes(targetRole)){
         fn.rejectInteration(interaction, 'roleNotExistInDb');
         return;
       }
@@ -649,10 +651,16 @@ async function managerRoleOp(interaction, props) {
         content: 'This role has been remove from manager list.',
         ephemeral: true
       });
+      roleList = roleList.filter(value => value != targetRole);
     break;
     default:
       fn.rejectInteration(interaction, 'invalidParameter');
   }
+  fn.initGuildCmd(
+    rest, Routes, config.userID,
+    interaction.guild, roleList,
+    sd.commands,
+  );
 }
 
 module.exports = {

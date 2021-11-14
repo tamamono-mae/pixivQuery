@@ -165,17 +165,24 @@ function permissionCheckBot(client) {
 
 function permissionCheckUser(client, opCode, authorId = '0') {
   let p;
+  const managerRoles = dbCache.get('managerRoles_guildId'+client.guild.id);
+  const rolesCache = client.guild.roles.cache;
+  let m = (client.user.id == client.guild.ownerId);
+  for(let i=0; i<managerRoles.length; i++){
+    if(m) break;
+    m = rolesCache.get(managerRoles[i]).members.has(client.user.id);
+  }
   if (!client.isDm) {
     switch(client.objType) {
       case 'message':
         p = ((client.channel.guild.ownerID == client.author.id ? 0x10:0)
-          | (client.channel.permissionsFor(client.author).has(sd.permission.userManageMassage) ? 0x8:0)
+          | (m ? 0x8:0)
           | (client.author.id == authorId ? 0x4:0)
           | 0x3) & sd.opProps[opCode]['perm'];
       break;
       case 'commandInteraction':
         p = ((client.channel.guild.ownerID == client.user.id ? 0x10:0)
-          | (client.channel.permissionsFor(client.user).has(sd.permission.userManageMassage) ? 0x8:0)
+          | (m ? 0x8:0)
           | (client.user.id == authorId ? 0x4:0)
           | 0x3) & sd.opProps[opCode]['perm'];
       break;

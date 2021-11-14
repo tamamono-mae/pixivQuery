@@ -28,7 +28,7 @@ function urlDump(content) {
 }
 
 async function initGuildCmd(
-  rest, Routes, userID,
+  rest, Routes, userID, dbCache,
   guild, managerRoles,
   commands) {
   commands.forEach((command, i) => {
@@ -63,6 +63,10 @@ async function initGuildCmd(
       default:
       console.error(error);
     }
+  } finally {
+    if(dbCache.get('managerRoles_guildId'+guild.id) != null)
+      dbCache.del('managerRoles_guildId'+guild.id);
+    dbCache.put('managerRoles_guildId'+guild.id, managerRoles);
   }
 }
 
@@ -107,6 +111,7 @@ async function initCmdAll(client) {
   const { commands } = require("./shareData.js");
   const permissionManage = require("./shareData.js").permission.userManageMassage;
   const { getManagerRole } = require("./dbOperation.js");
+  const dbCache = require('memory-cache');
   //Initilize commands
   console.info(`[ info ] Initilizing guild commands ...`);
   let promisePool = [];
@@ -116,7 +121,7 @@ async function initCmdAll(client) {
     managerRoles = await getManagerRole(guildsNew[i]);
     promisePool.push(
       initGuildCmd(
-        rest, Routes, config.userID,
+        rest, Routes, config.userID, dbCache,
         guildCache.get(guildsNew[i]), managerRoles,
         commands
       )
