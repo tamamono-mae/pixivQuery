@@ -11,7 +11,7 @@ const fetch = require("node-fetch");
 const formData = require("form-data");
 
 async function postImageInfo(messageObject ,props) {
-  var queryResult;
+  let queryResult;
   switch (props.website) {
     case 'pixiv':
       queryResult = await q.pixivQuery(props.uid, 1);
@@ -37,16 +37,16 @@ async function postImageInfo(messageObject ,props) {
     //console.log(cacheChannel);
     //let cachedImg = await messageObject.client.channels.cache.get(config.workingSpaceChannelId).send(replyContent.embed.image.url);
 
-    var cacheImgHeaders = {
+    let cacheImgHeaders = {
       'Authorization': 'Bearer ' + config.imgurBearer
     };
 
-    var cacheImgformdata = new formData();
+    let cacheImgformdata = new formData();
     cacheImgformdata.append("image", replyContent.embeds[0].image.url);
     cacheImgformdata.append("album", config.imgurAlbum);
     cacheImgformdata.append("type", "url");
 
-    var requestOptions = {
+    let requestOptions = {
       method: 'POST',
       headers: cacheImgHeaders,
       body: cacheImgformdata,
@@ -70,7 +70,7 @@ async function postImageInfo(messageObject ,props) {
   //add reaction in background
   replyMessage.configReaction = messageObject.configReaction;
   replyMessage.react(messageObject.configReaction);
-  var dbWriteData = {
+  let dbWriteData = {
     time: Date.now(),
     sourceId: messageObject.id,
     sourceUserId: messageObject.author.id,
@@ -82,7 +82,7 @@ async function postImageInfo(messageObject ,props) {
     currentPage: 1,
     type: props.website
   }
-  var logInfo = {
+  let logInfo = {
       type: props.opCode,
       sourceId: dbWriteData.sourceId,
       sourceUserId: dbWriteData.sourceUserId,
@@ -96,7 +96,7 @@ async function postImageInfo(messageObject ,props) {
     dbWriteData.sourceContent = props.urlContent;
     logInfo.sourceContent = props.urlContent;
   }
-  var cacheKey = 'cacheMsg_' + dbWriteData.replyId + '_' + dbWriteData.sourceChannelId;
+  let cacheKey = 'cacheMsg_' + dbWriteData.replyId + '_' + dbWriteData.sourceChannelId;
   if (!messageObject.isDm) {
     dbWriteData['sourceGuildId'] = messageObject.guild.id;
     cacheKey += '_' + messageObject.guild.id;
@@ -114,7 +114,7 @@ async function postImageInfo(messageObject ,props) {
 }
 
 function helpEmbedAdmin(descriptionAry, moduleName, color, thumbnail) {
-  var helpMsg = {
+  let helpMsg = {
     "title": "Manager commands",
     "description": "",
     "color": 0,
@@ -122,7 +122,7 @@ function helpEmbedAdmin(descriptionAry, moduleName, color, thumbnail) {
       "url": ""
     }
   };
-  var modules = "";
+  let modules = "";
   moduleName.forEach(item => {
     modules += "> `" + item + "`\n";
   });
@@ -134,7 +134,7 @@ function helpEmbedAdmin(descriptionAry, moduleName, color, thumbnail) {
 }
 
 function helpMessage(interaction ,props) {
-  var adminContent = { embeds: [ sd.helpEmbed ] };
+  let adminContent = { embeds: [ sd.helpEmbed ] };
   if (interaction.channel.permissionsFor(interaction.user).has(8192n)) {
     adminContent.embeds.push(
     helpEmbedAdmin(
@@ -149,7 +149,7 @@ function helpMessage(interaction ,props) {
     ephemeral: true
   });
 
-  var logInfo = {
+  let logInfo = {
     type: props.opCode,
     sourceId: interaction.id,
     sourceUserId: interaction.user.id,
@@ -163,7 +163,7 @@ function helpMessage(interaction ,props) {
 }
 
 function dmHelpMessage(messageObject ,props) {
-  var adminContent = "";
+  let adminContent = "";
   if (messageObject.channel.permissionsFor(messageObject.author).has(8192n)) {
     adminContent =
     helpEmbedAdmin(
@@ -177,7 +177,7 @@ function dmHelpMessage(messageObject ,props) {
   //srcMessage.channel.send(messageContent);
   if (messageObject.isMessageManager) messageObject.delete();
 
-  var logInfo = {
+  let logInfo = {
     type: props.opCode,
     sourceId: messageObject.id,
     sourceUserId: messageObject.author.id,
@@ -207,7 +207,7 @@ function setReaction(interaction, props) {
     ephemeral: true
   });
   dbop.toConfigDB(interaction, writeData);
-  var logInfo = {
+  let logInfo = {
     type: props.opCode,
     sourceId: interaction.id,
     sourceUserId: interaction.user.id,
@@ -221,7 +221,7 @@ function setReaction(interaction, props) {
 }
 
 function dmModuleStatus(messageObject ,props) {
-  var statusEmbed = {
+  let statusEmbed = {
     "title": "Status for modules in ",
     "description": "",
     "color": props.color,
@@ -229,11 +229,11 @@ function dmModuleStatus(messageObject ,props) {
         "url": props.thumbnail
       }
   };
-  var moduleStatus = "🇬 🇨\n";
+  let moduleStatus = "🇬 🇨\n";
   statusEmbed.title +=
   messageObject.guild.name + ' and ' + messageObject.channel.name;
-  var [guildSwitch , channelSwitch] = [messageObject.guildSwitch , messageObject.channelSwitch];
-  for(var i=0;i<sd.moduleName.length;i++) {
+  let [guildSwitch , channelSwitch] = [messageObject.guildSwitch , messageObject.channelSwitch];
+  for(let i=0;i<sd.moduleName.length;i++) {
     moduleStatus +=
     ((guildSwitch & 1) == 1 ? '✅' : '❎') + " " +
     ((channelSwitch & 1) == 1 ? '✅' : '❎') + " " +
@@ -246,7 +246,7 @@ function dmModuleStatus(messageObject ,props) {
   //====================== Change text command to slash command, reply ephemeral: true
   //messageObject.delete();
 
-  var logInfo = {
+  let logInfo = {
     type: props.opCode,
     sourceId: messageObject.id,
     sourceUserId: messageObject.author.id,
@@ -260,7 +260,7 @@ function dmModuleStatus(messageObject ,props) {
 }
 
 function functionStatus(interaction ,props) {
-  var statusEmbed = {
+  let statusEmbed = {
     "title": "Status for function in ",
     "description": "",
     "color": props.color,
@@ -268,11 +268,11 @@ function functionStatus(interaction ,props) {
         "url": props.thumbnail
       }
   };
-  var moduleStatus = "🇬 🇨\n";
+  let moduleStatus = "🇬 🇨\n";
   statusEmbed.title +=
   interaction.guild.name + ' and ' + interaction.channel.name;
-  var [guildSwitch , channelSwitch] = [interaction.guildSwitch , interaction.channelSwitch];
-  for(var i=0;i<sd.functionName.length;i++) {
+  let [guildSwitch , channelSwitch] = [interaction.guildSwitch , interaction.channelSwitch];
+  for(let i=0;i<sd.functionName.length;i++) {
     moduleStatus +=
     ((guildSwitch & 1) == 1 ? '✅' : '❎') + " " +
     ((channelSwitch & 1) == 1 ? '✅' : '❎') + " " +
@@ -288,7 +288,7 @@ function functionStatus(interaction ,props) {
   //====================== Change text command to slash command, reply ephemeral: true
   //messageObject.delete();
 
-  var logInfo = {
+  let logInfo = {
     type: props.opCode,
     sourceId: interaction.id,
     sourceUserId: interaction.user.id,
@@ -303,8 +303,8 @@ function functionStatus(interaction ,props) {
 
 function functionConfig(interaction, props) {
   //dbLog['type'] = 'Config';
-  var check = false;
-  //var botModule = objectCheck.content.split(" ")[1];
+  let check = false;
+  //let botModule = objectCheck.content.split(" ")[1];
   // Check function name is not illigal.
   props.function = interaction.options.get('name').value;
   for (i=0;i<sd.functionName.length;i++) {
@@ -344,7 +344,7 @@ function functionConfig(interaction, props) {
   });
   dbop.toConfigDB(interaction, writeData, props.isDefault);
 
-  var logInfo = {
+  let logInfo = {
     type: props.opCode,
     sourceId: interaction.id,
     sourceUserId: interaction.user.id,
@@ -362,8 +362,8 @@ function functionConfig(interaction, props) {
 
 function moduleSwitch(messageObject, props) {
   //dbLog['type'] = 'Config';
-  var check = false;
-  //var botModule = objectCheck.content.split(" ")[1];
+  let check = false;
+  //let botModule = objectCheck.content.split(" ")[1];
   for (i=0;i<sd.moduleName.length;i++) {
     if (props.module.match(new RegExp(`^${sd.moduleName[i]}`,'gm')) != null){
       check = true;
@@ -406,7 +406,7 @@ function moduleSwitch(messageObject, props) {
   );
   dbop.toConfigDB(messageObject, writeData, props.isDefault);
 
-  var logInfo = {
+  let logInfo = {
     type: props.opCode,
     sourceId: messageObject.id,
     sourceUserId: messageObject.author.id,
@@ -423,7 +423,7 @@ function moduleSwitch(messageObject, props) {
 }
 
 async function turnPage(interaction, props) {
-  var check = false; //Check illigal action
+  let check = false; //Check illigal action
   if (
     props.isNext &&
     interaction.cacheData.currentPage < interaction.cacheData.pageCount &&
@@ -437,8 +437,8 @@ async function turnPage(interaction, props) {
     )
       check = true;
   if (!check) return;
-  var queryResult;
-  var dumpResult;
+  let queryResult;
+  let dumpResult;
   interaction.cacheData.currentPage += fn.pageOffset(props.isNext);
   switch (interaction.cacheData.type) {
     case 'pixiv':
@@ -452,14 +452,14 @@ async function turnPage(interaction, props) {
   });
   dbop.updateCurrentPage(interaction);
   //Update cache data
-  var cacheKey = 'cacheMsg_' + interaction.message.id + '_' + interaction.message.channel.id;
+  let cacheKey = 'cacheMsg_' + interaction.message.id + '_' + interaction.message.channel.id;
   if (!interaction.isDm) {
     cacheKey += '_' + interaction.message.channel.guild.id;
   }
   dbCache.del(cacheKey);
   dbCache.put(cacheKey ,interaction.cacheData);
 
-  var logInfo = {
+  let logInfo = {
     type: props.opCode,
     sourceId: interaction.message.id,
     sourceUserId: interaction.reactionCurrentUser,
@@ -481,7 +481,7 @@ async function removeEmbedMsg(interaction, props) {
     srcMessage.suppressEmbeds(false);
   */
   dbop.deleteCacheDBData(cacheData);
-  var cacheKey = 'cacheMsg_' + cacheData.replyId + '_' + cacheData.sourceChannelId;
+  let cacheKey = 'cacheMsg_' + cacheData.replyId + '_' + cacheData.sourceChannelId;
   if (!isDm) {
     cacheKey += '_' + cacheData.sourceGuildId;
   }
@@ -494,7 +494,7 @@ async function removeEmbedMsg(interaction, props) {
   }
   let replyMessage = await interaction.message.delete();
 
-  var logInfo = {
+  let logInfo = {
     type: props.opCode,
     sourceId: replyMessage.id,
     sourceUserId: rinteraction.reactionCurrentUser,
@@ -532,7 +532,7 @@ async function postUrl(messageObject ,props) {
     currentPage: 1,
     type: 'Other'
   }
-  var logInfo = {
+  let logInfo = {
     type: props.opCode,
     sourceId: dbWriteData.sourceId,
     sourceUserId: dbWriteData.sourceUserId,
@@ -542,7 +542,7 @@ async function postUrl(messageObject ,props) {
     replyId: dbWriteData.replyId,
     replyContent: replyMessage.content
   }
-  var cacheKey = 'cacheMsg_' + dbWriteData.replyId + '_' + dbWriteData.sourceChannelId;
+  let cacheKey = 'cacheMsg_' + dbWriteData.replyId + '_' + dbWriteData.sourceChannelId;
   if (messageObject.guild != null) {
     dbWriteData['sourceGuildId'] = messageObject.guild.id;
     cacheKey += '_' + messageObject.guild.id;
@@ -554,31 +554,31 @@ async function postUrl(messageObject ,props) {
 }
 
 function urlSearch(messageObject, props) {
-  var urlPool = [];
-  var promisePool = [];
+  let urlPool = [];
+  let promisePool = [];
   let pattern = new RegExp(`(?<url>^(https|http):\/\/(.+)(.jpg|.png))`,'i');
   if (props.opCode == 'imgSearch') {
-    for (var i=0;i<props.urls.length;i++) {
+    for (let i=0;i<props.urls.length;i++) {
       if (props['urls'][i]['attachment'].match(pattern) != null)
         urlPool.push(props['urls'][i]['attachment']);
     }
   }
   if (props.opCode == 'urlSearch') {
     let tempPool = messageObject.content.split("\n");
-    for (var i=0;i<tempPool.length;i++) {
+    for (let i=0;i<tempPool.length;i++) {
       if (tempPool[i].match(pattern) != null)
         urlPool.push(tempPool[i]);
     }
   }
-  for (var i=0;i<urlPool.length;i++)
+  for (let i=0;i<urlPool.length;i++)
     promisePool.push(q.saucenaoSearch(urlPool[i]));
   return Promise.all(promisePool).then(searchResult => {
-    var promisePool = [];
+    let promisePool = [];
     //Remove duplicates and null from searchResult
     searchResult = Array.from(new Set(searchResult)).filter(item => item != null);
     if (searchResult.length == 0) throw new Error('No result');
-    for (var i=0;i<searchResult.length;i++) {
-      var subProps = {
+    for (let i=0;i<searchResult.length;i++) {
+      let subProps = {
         opCode: props.opCode,
         urlContent: searchResult[i]
       };
@@ -604,9 +604,9 @@ function urlSearch(messageObject, props) {
 }
 
 async function registerCommand(interaction, props) {
-  var managerRoles = await dbop.getManagerRole(interaction.guild.id);
+  let managerRoles = await dbop.getManagerRole(interaction.guild.id);
   //Filter
-  const guildRoles = Array.from(interaction.guild.roles.cache.keys());
+  let guildRoles = Array.from(interaction.guild.roles.cache.keys());
   managerRoles = managerRoles.filter(
     values => guildRoles.includes(values)
   );
@@ -621,6 +621,40 @@ async function registerCommand(interaction, props) {
   });
 }
 
+async function managerRoleOp(interaction, props) {
+  let targetRole = interaction.options.get('role').value;
+  switch(interaction.options.get('action').value) {
+    case 'add':
+      if(!interaction.guild.roles.cache.has(targetRole)){
+        fn.rejectInteration(interaction, 'roleNotInGuild');
+        return;
+      }
+      if(await dbop.managerRoleHas(interaction)){
+        fn.rejectInteration(interaction, 'roleExistInDb');
+        return;
+      }
+      await dbop.managerRoleDb(interaction, true, targetRole);
+      interaction.reply({
+        content: 'This role has been manager now.',
+        ephemeral: true
+      });
+    break;
+    case 'remove':
+      if(!(await dbop.managerRoleHas(interaction))){
+        fn.rejectInteration(interaction, 'roleNotExistInDb');
+        return;
+      }
+      await dbop.managerRoleDb(interaction, false, targetRole);
+      interaction.reply({
+        content: 'This role has been remove from manager list.',
+        ephemeral: true
+      });
+    break;
+    default:
+      fn.rejectInteration(interaction, 'invalidParameter');
+  }
+}
+
 module.exports = {
   postImageInfo,
   helpMessage,
@@ -633,5 +667,6 @@ module.exports = {
   turnPage,
   removeEmbedMsg,
   urlSearch,
-  registerCommand
+  registerCommand,
+  managerRoleOp
 };

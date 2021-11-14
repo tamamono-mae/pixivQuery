@@ -67,7 +67,7 @@ function toCacheDB(data){
 function toConfigDB(messageObject, data ,isGlobal = false) {
   if (isGlobal) {
     if (messageObject.guildFunctionIsDefault){
-      var writeData = {
+      let writeData = {
         "guildId" : messageObject.guild.id,
         "functionSwitch" : config.defaultPermissionBitfield
       };
@@ -84,7 +84,7 @@ function toConfigDB(messageObject, data ,isGlobal = false) {
   }
   else {
     if (messageObject.channelFunctionIsDefault) {
-      var writeData = {
+      let writeData = {
         "guildId" : messageObject.guild.id,
         "channelId" : messageObject.channel.id,
         "functionSwitch" : config.defaultPermissionBitfield,
@@ -120,7 +120,7 @@ function deleteCacheDBData(cacheData) {
 }
 
 async function setEmbedMsgCache(interaction) {
-  var cacheKey = 'cacheMsg_' + interaction.message.id + '_' + interaction.message.channel.id;
+  let cacheKey = 'cacheMsg_' + interaction.message.id + '_' + interaction.message.channel.id;
   if (!interaction.isDm) {
     cacheKey += '_' + interaction.message.channel.guild.id;
   }
@@ -130,7 +130,7 @@ async function setEmbedMsgCache(interaction) {
   interaction.cacheData = await fetchCache(interaction.message);
   if(interaction.cacheData != null) return;
   //Recover data from post
-  var pageValue;
+  let pageValue;
   interaction.message.components[0].components.forEach(button => {
   if((button.style == 'SECONDARY') && button.disabled)
     pageValue = button.label;
@@ -156,7 +156,7 @@ function getManagerRole(guildId) {
   .where( 'guildId', guildId )
   .select('roleId')
   .then(rows => {
-    var roleIds = [];
+    let roleIds = [];
     rows.forEach((row) => {
       roleIds.push(row.roleId);
     });
@@ -164,15 +164,27 @@ function getManagerRole(guildId) {
   });
 }
 
-function managerRoleDb(interaction) {
-  if(!interaction.mro.actionAdd) {
-    configDb(configTables[2])
+function managerRoleHas(interaction) {
+  return configDb(configTables[2])
+  .where('guildId', interaction.guild.id)
+  .andWhere('roleId', interaction.options.get('role').value)
+  .then(rows => {
+    return rows.length > 0;
+  });
+}
+
+function managerRoleDb(interaction, isAdd, targetRole) {
+  if(!isAdd) {
+    return configDb(configTables[2])
     .where('guildId', interaction.guild.id )
-    .andWhere('roleId', interaction.mro.data.roleId)
-    .del().then(()=>{});
-    return;
+    .andWhere('roleId', targetRole)
+    .del().then((result)=>{return result});
+
   }
-  configDb(cacheTables[2]).insert([interaction.mro.data]).then(()=>{});
+  return configDb(configTables[2]).insert([{
+    'guildId': interaction.guild.id,
+    'roleId': targetRole
+  }]).then((result)=>{return result});
 }
 
 module.exports = {
@@ -184,5 +196,6 @@ module.exports = {
   deleteCacheDBData,
   setEmbedMsgCache,
   getManagerRole,
+  managerRoleHas,
   managerRoleDb
 };

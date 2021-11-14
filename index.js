@@ -41,7 +41,7 @@ const logger = winston.createLogger({
 
 function loggerArray(logArray) {
   if (logArray != null)
-    for(var i=0;i<logArray.length;i++){
+    for(let i=0;i<logArray.length;i++){
       logger.info(logArray[i]);
       //console.log(logArray[i]);
     }

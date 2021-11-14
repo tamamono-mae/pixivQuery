@@ -27,7 +27,7 @@ let switchOrderList = [
 async function setConfig(client) {
   let messageObj = (client.message == null) ?
   client : client.message;
-  var [guildSwitch , channelSwitch, reaction] = [null,null,null];
+  let [guildSwitch , channelSwitch, reaction] = [null,null,null];
   if (!client.isDm) {
     [guildSwitch , channelSwitch, reaction] =
     await dbop.fetchConfig(messageObj);
@@ -51,7 +51,7 @@ async function setConfig(client) {
 
 function attachmentSwitchOrder(client) {
   let functionSwitch = client.guildSwitch & client.channelSwitch;
-  var returnOrder = [];
+  let returnOrder = [];
   let item = {
     action: a.urlSearch,
     varExt: { opCode: "imgSearch" , urls: Array.from(client.attachments.values()) }
@@ -65,8 +65,8 @@ function attachmentSwitchOrder(client) {
 
 function msgSwitchOrder(client) {
   let functionSwitch = client.guildSwitch & client.channelSwitch;
-  var returnOrder = [];
-  for(var i=0;i<switchOrderList.length;i++) {
+  let returnOrder = [];
+  for(let i=0;i<switchOrderList.length;i++) {
     let item = switchOrderList[i];
     let numOfBit = sd.opProps[item.varExt.opCode]['bit'];
     let isOn = ( (functionSwitch >> numOfBit) & 1 ) == 1;
@@ -142,7 +142,7 @@ function msgAdminCommandOrder(client) {
 }
 
 function permissionCheckBot(client) {
-  var messageObject = {};
+  let messageObject = {};
   switch(client.objType) {
     case 'message':
       messageObject = client;
@@ -164,7 +164,7 @@ function permissionCheckBot(client) {
 }
 
 function permissionCheckUser(client, opCode, authorId = '0') {
-  var p;
+  let p;
   if (!client.isDm) {
     switch(client.objType) {
       case 'message':
@@ -207,13 +207,13 @@ function cmdRouter(interaction) {
       }
     }
   ];
-  for (var i=0;i<route.length;i++) {
+  for (let i=0;i<route.length;i++) {
     //Match command
     let currRoute = route[i];
     if (route[i].cmd != interaction.commandName) continue;
     //Pre-process
-    var props = {};
-    for (var j=0;j<Object.keys(route[i]['varExt']).length;j++) {
+    let props = {};
+    for (let j=0;j<Object.keys(route[i]['varExt']).length;j++) {
       props[Object.keys(route[i]['varExt'])[j]] = Object.values(route[i]['varExt'])[j];
     }
     //Check permission
@@ -228,14 +228,15 @@ function cmdRouter(interaction) {
       return;
     };
     //Check parameter exist
-    var parameterUndfeind = checkParameterUndfeind(interaction, route[i].varKey);
+    let parameterUndfeind = checkParameterUndfeind(interaction, route[i].varKey);
     if(parameterUndfeind.length > 0) {
-      var j;
-      var errorString = '[ ERR  ] Parameter not found ! ';
+      let j;
+      let errorString = '[ ERR  ] Parameter not found ! ';
       for(j=0; j< (parameterUndfeind.length -1) ; j++) {
         errorString += parameterUndfeind[j] + ', ';
       }
       errorString += parameterUndfeind[++j];
+      rejectInteration(interaction, 'invalidParameter');
       throw errorString;
     }
     //pre-process 2
@@ -268,18 +269,18 @@ function msgRouter(messageObj) {
 
   ];
   //let matchRoute = route.find((route) => message.match(route.patt));
-  for (var i=0;i<route.length;i++) {
+  for (let i=0;i<route.length;i++) {
     let currRoute = route[i];
     let regexResult = currRoute.patt.exec(message);
     if (!regexResult) continue;
 
-    var props = {};
+    let props = {};
     if (regexResult.groups != null)
-    for (var j=0;j<Object.keys(regexResult.groups).length;j++) {
+    for (let j=0;j<Object.keys(regexResult.groups).length;j++) {
       props[Object.keys(regexResult.groups)[j]] = Object.values(regexResult.groups)[j];
     }
 
-    for (var j=0;j<Object.keys(route[i]['varExt']).length;j++) {
+    for (let j=0;j<Object.keys(route[i]['varExt']).length;j++) {
       props[Object.keys(route[i]['varExt'])[j]] = Object.values(route[i]['varExt'])[j];
     }
 
@@ -304,11 +305,11 @@ function attachmentRouter(messageObj) {
   ];
   //let matchRoute = route.find((route) => message.match(route.patt));
 
-  for (var i=0;i<route.length;i++) {
+  for (let i=0;i<route.length;i++) {
     let currRoute = route[i];
-    var props = {};
+    let props = {};
 
-    for (var j=0;j<Object.keys(route[i]['varExt']).length;j++) {
+    for (let j=0;j<Object.keys(route[i]['varExt']).length;j++) {
       props[Object.keys(route[i]['varExt'])[j]] = Object.values(route[i]['varExt'])[j];
     }
 
@@ -346,12 +347,12 @@ function btnRouter(interaction) {
     }
   ];
   //let matchRoute = route.find((route) => message.match(route.patt));
-  for (var i=0;i<route.length;i++) {
+  for (let i=0;i<route.length;i++) {
     let currRoute = route[i];
     if (interaction.customId != currRoute.patt) continue;
 
-    var props = {};
-    for (var j=0;j<Object.keys(route[i]['varExt']).length;j++) {
+    let props = {};
+    for (let j=0;j<Object.keys(route[i]['varExt']).length;j++) {
       props[Object.keys(route[i]['varExt'])[j]] = Object.values(route[i]['varExt'])[j];
     }
     let checkPermissionResult = permissionCheckUser(

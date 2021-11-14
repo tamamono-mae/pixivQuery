@@ -109,10 +109,10 @@ async function initCmdAll(client) {
   const { getManagerRole } = require("./dbOperation.js");
   //Initilize commands
   console.info(`[ info ] Initilizing guild commands ...`);
-  var promisePool = [];
-  var managerRoles;
+  let promisePool = [];
+  let managerRoles;
   //Make a task array for multi-tasking.
-  for (var i=0; i<guildsNew.length; i++) {
+  for (let i=0; i<guildsNew.length; i++) {
     managerRoles = await getManagerRole(guildsNew[i]);
     promisePool.push(
       initGuildCmd(
@@ -130,9 +130,9 @@ async function initCmdAll(client) {
 }
 
 function checkParameterUndfeind(interaction, varKey) {
-  var parameterUndfeind = [];
-  var varKeyCurrent;
-  for(var i=0; i<varKey.length; i++){
+  let parameterUndfeind = [];
+  let varKeyCurrent;
+  for(let i=0; i<varKey.length; i++){
     varKeyCurrent = interaction.options.get(varKey[i]);
     if(varKeyCurrent == null) parameterUndfeind.push(varKey[i]);
   }
@@ -140,7 +140,7 @@ function checkParameterUndfeind(interaction, varKey) {
 }
 
 function makePageRow(data) {
-  var pageRow = {
+  let pageRow = {
     type: 'ACTION_ROW',
     components: [
       {
@@ -193,7 +193,7 @@ function makePageRow(data) {
 
 function textArray2str(textArray, separator) {
   if (textArray == null) return [];
-  var s = '';
+  let s = '';
   const lastItem = textArray.pop();
   textArray.forEach((item, i) => {
     s += item + separator;
@@ -250,6 +250,36 @@ function rejectInteration(interaction, reason) {
         interaction.guild.id + ' ' +
         interaction.guild.name
       );
+    break;
+    case 'roleNotInGuild':
+      interaction.reply({
+        content: 'This role is not in this guild !',
+        ephemeral: true
+      });
+    break;
+    case 'roleNotInDb':
+      interaction.reply({
+        content: "This role hasn't been add to manager !",
+        ephemeral: true
+      });
+    break;
+    case 'invalidParameter':
+      interaction.reply({
+        content: "Invalid Parameter !",
+        ephemeral: true
+      });
+    break;
+    case 'roleExistInDb':
+      interaction.reply({
+        content: "This role already has been manager !",
+        ephemeral: true
+      });
+    break;
+    case 'roleNotExistInDb':
+      interaction.reply({
+        content: "This role is not found in manager list !",
+        ephemeral: true
+      });
     break;
   }
   return true;

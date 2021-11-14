@@ -5,7 +5,7 @@ const permission = {
   userManageMassage: 8192n
 }
 
-let opProps = {
+const opProps = {
   /* guildOwner txtmanager originalAuthor is_text everyone*/
   "help" : { perm: 0x1E },
   // 1 1 1 1 0
@@ -114,11 +114,11 @@ const globalCommands = [
   }
 ]
 
-let moduleName = [
+const moduleName = [
   "getImageInfos", "urlSearch", "imgSearch"
 ]
 
-let functionName = [
+const functionName = [
   "getImageInfo", "urlSearch", "imgSearch"
 ]
 
