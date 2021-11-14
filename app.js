@@ -1,4 +1,7 @@
 const config = require(require("./shareData.js").configPath);
+const { Routes } = require('discord-api-types/v9');
+const { REST } = require('@discordjs/rest');
+const rest = new REST({ version: '9' }).setToken(config.BOT_TOKEN);
 const sd = require("./shareData.js");
 const dbop = require("./dbOperation.js");
 const fn = require("./fn.js");
@@ -598,6 +601,14 @@ function urlSearch(messageObject, props) {
       messageObject.delete();
     return logArray;
   });
+}
+
+function registerCommand(interaction, props) {
+  fn.initGuildCmd(
+    rest, Routes, config.userID,
+    interaction.guild.id, interaction.guild,
+    sd.commands, dbop.getManagerRole(interaction)
+  );
 }
 
 module.exports = {

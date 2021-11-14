@@ -91,6 +91,8 @@ client.on('interactionCreate', function(interaction) {
 });
 
 client.on("messageCreate", function(srcMessage) {
+	const { getManagerRole } = require("./dbOperation.js");
+	getManagerRole(srcMessage.guild.id);
   const start = new Date();
   srcMessage.isDm = (srcMessage.channel.type == 'dm');
   srcMessage.isText = (
@@ -135,9 +137,11 @@ client.on("messageCreate", function(srcMessage) {
 client.on('ready', () => {
   console.info(`[ info ] Logged in as ${client.user.tag}!`);
 	initCmdAll(client);
-	initGlobalCmd(client);
-  setInterval(( () => {
+	initGlobalCmd(client); //Useless
+	setInterval(( () => {
 		initCmdAll(client);
+  } ), 3600000);
+  setInterval(( () => {
     cacheDb('cacheMsg').where('sourceTimestamp', '<', Date.now()-86400000).del().then(()=>{});
   } ), 600000);
 });

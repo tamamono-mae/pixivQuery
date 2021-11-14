@@ -1,4 +1,4 @@
-const configPath = "../token/config5.json";
+const configPath = "../token/config2.json";
 const permission = {
   botSendMessage: 412384349248n,
   botManageMassage: 534790925376n,
@@ -20,7 +20,7 @@ let opProps = {
   "moduleSwitch": { perm: 0x18 },
   "functionConfig": { perm: 0x18 },
   "setReaction": { perm: 0x18 },
-  "initilize": { perm: 0x18 },
+  "registerCommand": { perm: 0x18 },
   "managerRoleOp": { perm: 0x18 },
   // 1 1 0 0 0
   "removeEmbedMsg": { perm: 0x1C },
@@ -89,8 +89,8 @@ const commands = [
         required: true,
         type: 3,
         choices: [
-          { name: 'Add', value: 'true' },
-          { name: 'Remove', value: '' }
+          { name: 'Add', value: 'add' },
+          { name: 'Remove', value: 'remove' }
         ]
       },
       {

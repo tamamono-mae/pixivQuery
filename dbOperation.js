@@ -1,5 +1,5 @@
 const config = require(require("./shareData.js").configPath);
-const configTables = ['guildFunction', 'channelFunction'];
+const configTables = ['guildFunction', 'channelFunction', 'guildManager' ];
 const cacheTables = ['cacheMsg'];
 
 const cacheDb = require('knex')({
@@ -60,6 +60,7 @@ function fetchConfig(messageObject) {
 }
 
 function toCacheDB(data){
+  console.log(data);
   cacheDb(cacheTables[0]).insert([data]).then(()=>{});
 }
 
@@ -150,6 +151,30 @@ async function setEmbedMsgCache(interaction) {
   }
 }
 
+function getManagerRole(guildId) {
+  return configDb(configTables[2])
+  .where( 'guildId', guildId )
+  .select('roleId')
+  .then(rows => {
+    var roleIds = [];
+    rows.forEach((row) => {
+      roleIds.push(row.roleId);
+    });
+    return roleIds;
+  });
+}
+
+function managerRoleDb(interaction) {
+  if(!interaction.mro.actionAdd) {
+    configDb(configTables[2])
+    .where('guildId', interaction.guild.id )
+    .andWhere('roleId', interaction.mro.data.roleId)
+    .del().then(()=>{});
+    return;
+  }
+  configDb(cacheTables[2]).insert([interaction.mro.data]).then(()=>{});
+}
+
 module.exports = {
   fetchCache,
   fetchConfig,
@@ -157,5 +182,7 @@ module.exports = {
   toConfigDB,
   updateCurrentPage,
   deleteCacheDBData,
-  setEmbedMsgCache
+  setEmbedMsgCache,
+  getManagerRole,
+  managerRoleDb
 };

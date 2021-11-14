@@ -28,41 +28,27 @@ function urlDump(content) {
 }
 
 async function initGuildCmd(
-  rest, Routes , userID,
-  guildsHandling, guild,
-  commands, permissionManage) {
-  var roleData = [];
-  guild.roles.cache.forEach((role, id) => {
-    let isNotBot = (role.tags == null) ? true : (role.tags.botId == null);
-    if(isNotBot) console.log(role.name);
-    if(role.permissions.has(8192n) && isNotBot) roleData.push(role.id);
-  });
-  console.log(roleData);
-
+  rest, Routes, userID,
+  guild, managerRoles,
+  commands) {
   commands.forEach((command, i) => {
-    command.permissions = [];
-    command.permissions.push(
-      {
-        id: guild.ownerID,
-        type: 'USER',
+    command.permissions = [{
+      id: guild.ownerID,
+      type: 'USER',
+      permission: true,
+    }];
+    managerRoles.forEach((roleID, i) => {
+      command.permissions.push({
+        id: roleID,
+        type: 'ROLE',
         permission: true,
-      }
-    );
-    roleData.forEach((roleID, i) => {
-      command.permissions.push(
-        {
-          id: roleID,
-          type: 'ROLE',
-          permission: true,
-        }
-      );
+      });
     });
-
   });
 
   try {
     await rest.put(
-      Routes.applicationGuildCommands(userID, guildsHandling),
+      Routes.applicationGuildCommands(userID, guild.id),
       { body: commands }
     );
   } catch (error) {
@@ -70,7 +56,7 @@ async function initGuildCmd(
       case 50001:
         console.warn(
           "[ warn ] Guild ID = " +
-          guildsHandling +
+          guild.id +
           ": Cannot update slash command without 'applications.commands' scope."
         );
       break;
@@ -88,13 +74,13 @@ async function initGlobalCmd(client) {
   const rest = new REST({ version: '9' }).setToken(config.BOT_TOKEN);
   const { globalCommands } = require("./shareData.js");
   //Initilize commands
-  console.info(`[ info ] Initilizing commands ...`);
+  console.info(`[ info ] Initilizing global commands ...`);
   try {
     await rest.put(
       Routes.applicationCommands(config.userID),
       { body: globalCommands }
     );
-    console.info(`[ info ] Initilizing guild commands finished.`);
+    console.info(`[ info ] Initilizing global commands finished.`);
   } catch (error) {
     console.error(error);
   }
@@ -120,16 +106,19 @@ async function initCmdAll(client) {
   const rest = new REST({ version: '9' }).setToken(config.BOT_TOKEN);
   const { commands } = require("./shareData.js");
   const permissionManage = require("./shareData.js").permission.userManageMassage;
+  const { getManagerRole } = require("./dbOperation.js");
   //Initilize commands
   console.info(`[ info ] Initilizing guild commands ...`);
   var promisePool = [];
+  var managerRoles;
   //Make a task array for multi-tasking.
   for (var i=0; i<guildsNew.length; i++) {
+    managerRoles = await getManagerRole(guildsNew[i]);
     promisePool.push(
       initGuildCmd(
         rest, Routes, config.userID,
-        guildsNew[i], guildCache.get(guildsNew[i]),
-        commands, permissionManage
+        guildCache.get(guildsNew[i]), managerRoles,
+        commands
       )
     );
   }

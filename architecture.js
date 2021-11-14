@@ -102,9 +102,9 @@ function adminCommandSwitchOrder(interaction) {
       },
       {
         cmd: 'initilize',
-        action: a.initCmdAll,
+        action: a.registerCommand,
         varKey: [],
-        varExt: { opCode: "initilize" }
+        varExt: { opCode: "registerCommand" }
       },
       {
         cmd: 'manager',
