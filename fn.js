@@ -259,6 +259,7 @@ module.exports = {
   replyConfigMessage,
   pageOffset,
   urlDump,
+  initGuildCmd,
   initCmdAll,
   initGlobalCmd,
   checkParameterUndfeind,

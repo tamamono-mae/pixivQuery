@@ -603,12 +603,22 @@ function urlSearch(messageObject, props) {
   });
 }
 
-function registerCommand(interaction, props) {
+async function registerCommand(interaction, props) {
+  var managerRoles = await dbop.getManagerRole(interaction.guild.id);
+  //Filter
+  const guildRoles = Array.from(interaction.guild.roles.cache.keys());
+  managerRoles = managerRoles.filter(
+    values => guildRoles.includes(values)
+  );
   fn.initGuildCmd(
     rest, Routes, config.userID,
-    interaction.guild.id, interaction.guild,
-    sd.commands, dbop.getManagerRole(interaction)
+    interaction.guild, managerRoles,
+    sd.commands,
   );
+  interaction.reply({
+    content: 'Done !',
+    ephemeral: true
+  });
 }
 
 module.exports = {
@@ -622,5 +632,6 @@ module.exports = {
   functionConfig,
   turnPage,
   removeEmbedMsg,
-  urlSearch
+  urlSearch,
+  registerCommand
 };
