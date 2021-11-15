@@ -104,7 +104,6 @@ client.on("messageCreate", function(srcMessage) {
   if (srcMessage.author.bot || !(srcMessage.isDm || srcMessage.isText)) return;
 	if (Array.from(srcMessage.attachments.values()).length == 0) {
     /*// TODO:
-		Add initilize command
 		Add cooldown function
 		Change calculate method of permission verification
 		Add reaction setting display in help message
@@ -137,6 +136,7 @@ client.on("messageCreate", function(srcMessage) {
 client.on('ready', () => {
   console.info(`[ info ] Logged in as ${client.user.tag}!`);
 	initCmdAll(client);
+	initGlobalCmd(client);
 	setInterval(( () => {
 		initCmdAll(client);
   } ), 3600000);

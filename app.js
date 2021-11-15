@@ -611,7 +611,7 @@ async function registerCommand(interaction, props) {
     values => guildRoles.includes(values)
   );
   fn.initGuildCmd(
-    rest, Routes, config.userID,
+    rest, Routes, config.userID, dbCache,
     interaction.guild, managerRoles,
     sd.commands,
   );
