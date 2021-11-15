@@ -167,7 +167,8 @@ function permissionCheckUser(client, opCode, authorId = '0') {
   let p;
   const managerRoles = dbCache.get('managerRoles_guildId'+client.guild.id);
   const rolesCache = client.guild.roles.cache;
-  let m = (client.user.id == client.guild.ownerId);
+  let m = (client.user == null) ?
+    (client.author.id == client.guild.ownerId) : (client.user.id == client.guild.ownerId);
   for(let i=0; i<managerRoles.length; i++){
     if(m) break;
     m = rolesCache.get(managerRoles[i]).members.has(client.user.id);
@@ -262,7 +263,7 @@ function msgRouter(messageObj) {
   let message = messageObj.content;
   let route = [
     ...msgSwitchOrder(messageObj),
-    ...msgAdminCommandOrder(messageObj),
+    /*...msgAdminCommandOrder(messageObj),
     {
       patt: new RegExp(`^${config.prefix} help`,'i'),
       action: a.dmHelpMessage,
@@ -273,7 +274,7 @@ function msgRouter(messageObj) {
         description: config.commandDescription
       }
     }
-
+    */
   ];
   //let matchRoute = route.find((route) => message.match(route.patt));
   for (let i=0;i<route.length;i++) {

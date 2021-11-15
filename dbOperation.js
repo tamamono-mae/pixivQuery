@@ -60,7 +60,6 @@ function fetchConfig(messageObject) {
 }
 
 function toCacheDB(data){
-  console.log(data);
   cacheDb(cacheTables[0]).insert([data]).then(()=>{});
 }
 
