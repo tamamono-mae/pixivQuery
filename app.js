@@ -20,7 +20,7 @@ async function postImageInfo(messageObject ,props) {
       queryResult = null;
   }
   if (queryResult == null) throw new Error('[ warn ] meta-data not found!');
-  if (messageObject.isMessageManager && !messageObject.deleted) {
+  if (messageObject.isMessageManager && !messageObject.deleted && !props.reserveOrg) {
     messageObject = await messageObject.delete();
   }
   //if (messageObject.isMessageManager) messageObject.suppressEmbeds(true);
@@ -580,7 +580,8 @@ function urlSearch(messageObject, props) {
     for (let i=0;i<searchResult.length;i++) {
       let subProps = {
         opCode: props.opCode,
-        urlContent: searchResult[i]
+        urlContent: searchResult[i],
+        reserveOrg: true
       };
       if (fn.urlDump(searchResult[i]) != null) {
         subProps.uid = fn.urlDump(searchResult[i]).uid;
@@ -593,10 +594,6 @@ function urlSearch(messageObject, props) {
     }
     return Promise.all(promisePool);
   }).then(logArray => {
-    /*
-    if(messageObject != null && props.opCode == 'imgSearch' && messageObject.isMessageManager)
-      messageObject.delete();
-    */
     if(messageObject != null && !messageObject.deleted && messageObject.isMessageManager)
       messageObject.delete();
     return logArray;
