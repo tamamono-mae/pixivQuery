@@ -657,7 +657,7 @@ async function managerRoleOp(interaction, props) {
       fn.rejectInteration(interaction, 'invalidParameter');
   }
   fn.initGuildCmd(
-    rest, Routes, config.userID,
+    rest, Routes, config.userID, dbCache,
     interaction.guild, roleList,
     sd.commands,
   );
