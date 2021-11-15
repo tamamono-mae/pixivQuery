@@ -71,20 +71,20 @@ async function initGuildCmd(
 }
 
 async function initGlobalCmd(client) {
-  //Initilize const
+  //initialize const
   const config = require(require("./shareData.js").configPath);
   const { Routes } = require('discord-api-types/v9');
   const { REST } = require('@discordjs/rest');
   const rest = new REST({ version: '9' }).setToken(config.BOT_TOKEN);
   const { globalCommands } = require("./shareData.js");
-  //Initilize commands
-  console.info(`[ info ] Initilizing global commands ...`);
+  //initialize commands
+  console.info(`[ info ] Initializing global commands ...`);
   try {
     await rest.put(
       Routes.applicationCommands(config.userID),
       { body: globalCommands }
     );
-    console.info(`[ info ] Initilizing global commands finished.`);
+    console.info(`[ info ] Initializing global commands finished.`);
   } catch (error) {
     console.error(error);
   }
@@ -103,7 +103,7 @@ async function initCmdAll(client) {
   );
   if (guildsLeft.length != 0) client.guildsHandling = guildsShouldHandle;
   if (guildsNew.length == 0) return;
-  //Initilize const
+  //initialize const
   const config = require(require("./shareData.js").configPath);
   const { Routes } = require('discord-api-types/v9');
   const { REST } = require('@discordjs/rest');
@@ -112,8 +112,8 @@ async function initCmdAll(client) {
   const permissionManage = require("./shareData.js").permission.userManageMassage;
   const { getManagerRole } = require("./dbOperation.js");
   const dbCache = require('memory-cache');
-  //Initilize commands
-  console.info(`[ info ] Initilizing guild commands ...`);
+  //initialize commands
+  console.info(`[ info ] Initializing guild commands ...`);
   let promisePool = [];
   let managerRoles;
   //Make a task array for multi-tasking.
@@ -131,7 +131,7 @@ async function initCmdAll(client) {
   await Promise.all(promisePool);
   //Register handling guilds.
   client.guildsHandling = guildsShouldHandle;
-  console.info(`[ info ] Initilizing guild commands finished.`);
+  console.info(`[ info ] Initializing guild commands finished.`);
 }
 
 function checkParameterUndfeind(interaction, varKey) {

@@ -101,7 +101,7 @@ function adminCommandSwitchOrder(interaction) {
         varExt: { opCode: "functionConfig" }
       },
       {
-        cmd: 'initilize',
+        cmd: 'initialize',
         action: a.registerCommand,
         varKey: [],
         varExt: { opCode: "registerCommand" }
@@ -277,6 +277,9 @@ function msgRouter(messageObj) {
     */
   ];
   //let matchRoute = route.find((route) => message.match(route.patt));
+  console.log('here');
+  if(messageObj.guild.id == '356740863688441856')
+    console.log(route);
   for (let i=0;i<route.length;i++) {
     let currRoute = route[i];
     let regexResult = currRoute.patt.exec(message);

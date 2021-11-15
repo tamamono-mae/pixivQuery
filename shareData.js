@@ -108,7 +108,7 @@ const commands = [
 
 const globalCommands = [
   {
-    name: 'initilize',
+    name: 'initialize',
     description: 'Registering slash commands in current guild.',
     defaultPermission: undefined
   }

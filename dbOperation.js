@@ -18,6 +18,7 @@ const configDb = require('knex')({
 });
 
 const dbCache = require('memory-cache');
+const { webIcon2Types } = require('./shareData.js');
 
 function fetchCache(messageObject) {
   return cacheDb('cacheMsg')
@@ -145,7 +146,7 @@ async function setEmbedMsgCache(interaction) {
     replyId: interaction.message.id,
     pageCount: pageValue[1],
     currentPage: pageValue[0],
-    type: sd.webIcon2Types[interaction.message.embeds[0].author.iconURL],
+    type: webIcon2Types[interaction.message.embeds[0].author.iconURL],
     sourceGuildId: interaction.guild.id
   }
 }
