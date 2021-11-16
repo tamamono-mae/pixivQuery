@@ -286,6 +286,12 @@ function rejectInteration(interaction, reason) {
         ephemeral: true
       });
     break;
+    case 'invalidEmoji':
+      interaction.reply({
+        content: "This is not a valid emoji !",
+        ephemeral: true
+      });
+    break;
   }
   return true;
 }

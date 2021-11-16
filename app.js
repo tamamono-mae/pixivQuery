@@ -6,6 +6,7 @@ const sd = require("./shareData.js");
 const dbop = require("./dbOperation.js");
 const fn = require("./fn.js");
 const q = require("./query.js");
+const { emojis } = require("./emoji.json");
 const dbCache = require('memory-cache');
 const fetch = require("node-fetch");
 const formData = require("form-data");
@@ -194,6 +195,13 @@ function setReaction(interaction, props) {
   //dbLog['type'] = 'Config';
   //Process setting while checking passed.
   props.reaction = interaction.options.get('reaction').value;
+  console.log(props.reaction);
+  if (!emojis.includes(props.reaction)) {
+    fn.rejectInteration(interaction, 'invalidEmoji');
+    throw '[ info ] ' + interaction.user.id + '/' +
+    interaction.channel.id + '/' + interaction.guild.id +
+    ': Invalid emoji';
+  }
   if (props.reaction == interaction.configReaction) {
     interaction.reply({
       content: 'No modification made',
