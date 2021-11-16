@@ -167,27 +167,19 @@ function permissionCheckUser(client, opCode, authorId = '0') {
   let p;
   const managerRoles = dbCache.get('managerRoles_guildId'+client.guild.id);
   const rolesCache = client.guild.roles.cache;
-  let m = (client.user == null) ?
-    (client.author.id == client.guild.ownerId) : (client.user.id == client.guild.ownerId);
-  for(let i=0; i<managerRoles.length; i++){
-    if(m) break;
-    m = rolesCache.get(managerRoles[i]).members.has(client.user.id);
-  }
-  if (!client.isDm) {
-    switch(client.objType) {
-      case 'message':
-        p = ((client.channel.guild.ownerID == client.author.id ? 0x10:0)
-          | (m ? 0x8:0)
-          | (client.author.id == authorId ? 0x4:0)
-          | 0x3) & sd.opProps[opCode]['perm'];
-      break;
-      case 'commandInteraction':
-        p = ((client.channel.guild.ownerID == client.user.id ? 0x10:0)
-          | (m ? 0x8:0)
-          | (client.user.id == authorId ? 0x4:0)
-          | 0x3) & sd.opProps[opCode]['perm'];
-      break;
+  const userID = (client.user == null) ? client.author.id : client.user.id;
+  let m = (userID == client.guild.ownerId);
+  if(managerRoles != null)
+    for(let i=0; i<managerRoles.length; i++){
+      if(m) break;
+      m = rolesCache.get(managerRoles[i]).members.has(client.user.id);
     }
+  //console.info('[ info ] ' + userID + ' is ' + (m ? 'a' : 'not a') + ' manager.');
+  if (!client.isDm) {
+    p = ((client.channel.guild.ownerID == userID ? 0x10:0)
+      | (m ? 0x8:0)
+      | (userID == authorId ? 0x4:0)
+      | 0x3) & sd.opProps[opCode]['perm'];
   } else {
     p = ((client.objType == 'message') ? 0x1 : 0x5) & sd.opProps[opCode]['perm'];
   }
@@ -277,9 +269,6 @@ function msgRouter(messageObj) {
     */
   ];
   //let matchRoute = route.find((route) => message.match(route.patt));
-  console.log('here');
-  if(messageObj.guild.id == '356740863688441856')
-    console.log(route);
   for (let i=0;i<route.length;i++) {
     let currRoute = route[i];
     let regexResult = currRoute.patt.exec(message);
