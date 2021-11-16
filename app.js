@@ -195,7 +195,6 @@ function setReaction(interaction, props) {
   //dbLog['type'] = 'Config';
   //Process setting while checking passed.
   props.reaction = interaction.options.get('reaction').value;
-  console.log(props.reaction);
   if (!emojis.includes(props.reaction)) {
     fn.rejectInteration(interaction, 'invalidEmoji');
     throw '[ info ] ' + interaction.user.id + '/' +
