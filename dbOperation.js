@@ -135,7 +135,14 @@ async function setEmbedMsgCache(interaction) {
   if((button.style == 'SECONDARY') && button.disabled)
     pageValue = button.label;
   });
-  pageValue = pageValue.split('/');
+  if(pageValue != null) {
+    pageValue = pageValue.split('/');
+    pageValue[0] = parseInt(pageValue[0], 10);
+    pageValue[1] = parseInt(pageValue[1], 10);
+    if(pageValue[0] > pageValue[1]) pageValue[0] = 0;
+  } else {
+    pageValue = [ 1,1 ];
+  }
   interaction.cacheData =  {
     time: new Date(),
     sourceId: interaction.message.id,
