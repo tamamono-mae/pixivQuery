@@ -132,20 +132,29 @@ async function setEmbedMsgCache(interaction) {
   //Recover data from post
   let pageValue;
   interaction.message.components[0].components.forEach(button => {
-  if((button.style == 'SECONDARY') && button.disabled)
-    pageValue = button.label;
+    if((button.style == 'SECONDARY') && button.disabled)
+      pageValue = button.label;
   });
   //Extracting page values
-  pageValue = (pageValue == null) ? ([ 1,1 ]) : pageValue.split('/');
-  pageValue[0] = parseInt(pageValue[0], 10);
-  pageValue[1] = parseInt(pageValue[1], 10);
-  //Setting fixed page value if an error occurred
-  if((pageValue[0] < 1) || (pageValue[1] < 1)) pageValue = [ 1,1 ];
-  if(pageValue[0] > pageValue[1]) pageValue[0] = 1;
+  pageValue = (pageValue == null) ? ([ 1,1 ]) : function(){
+    let rtval = pageValue.split('/');
+    rtval[0] = parseInt(rtval[0], 10);
+    rtval[1] = parseInt(rtval[1], 10);
+    //Setting fixed page value if an error occurred
+    if((rtval[0] < 1) || (rtval[1] < 1)) return [ 1,1 ];
+    if(rtval[0] > rtval[1]) pageValue[0] = 1;
+    return rtval;
+  };
+  //Extracting author id of user.
+  let userId = interaction.message.content.split("\n")[1];
+  userId = userId.split(")");
+  userId = userId[userId.length - 2];
+  userId = userId.split("(");
+  userId = userId[userId.length - 1];
   interaction.cacheData =  {
     time: new Date(),
     sourceId: interaction.message.id,
-    sourceUserId: interaction.message.author.id,
+    sourceUserId: userId,
     sourceTimestamp: new Date(),
     sourceContent: interaction.message.embeds[0].url,
     sourceChannelId: interaction.channel.id,
