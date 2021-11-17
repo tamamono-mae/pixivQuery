@@ -136,15 +136,16 @@ async function setEmbedMsgCache(interaction) {
       pageValue = button.label;
   });
   //Extracting page values
-  pageValue = (pageValue == null) ? ([ 1,1 ]) : function(){
-    let rtval = pageValue.split('/');
+  let getPv = function(pV){
+    let rtval = pV.split('/');
     rtval[0] = parseInt(rtval[0], 10);
     rtval[1] = parseInt(rtval[1], 10);
     //Setting fixed page value if an error occurred
     if((rtval[0] < 1) || (rtval[1] < 1)) return [ 1,1 ];
     if(rtval[0] > rtval[1]) pageValue[0] = 1;
     return rtval;
-  };
+  }
+  pageValue = (pageValue == null) ? ([ 1,1 ]) : getPv(pageValue);
   //Extracting author id of user.
   let userId = interaction.message.content.split("\n")[1];
   userId = userId.split(")");
