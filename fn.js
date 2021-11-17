@@ -223,6 +223,7 @@ function rejectInteration(interaction, reason) {
     case 'pass':
       return false;
     case 'buttonPermission':
+    case 'buttonUnexpected':
       interaction.update({});
     break;
     case 'userIsBot':

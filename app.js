@@ -430,20 +430,20 @@ function moduleSwitch(messageObject, props) {
 }
 
 async function turnPage(interaction, props) {
-  let check = false; //Check illigal action
-  if (
+  //Check illigal action
+  let check = (
     props.isNext &&
     interaction.cacheData.currentPage < interaction.cacheData.pageCount &&
     interaction.cacheData.pageCount > 1
-    )
-      check = true;
-  if (
+  ) || (
     !props.isNext &&
     interaction.cacheData.currentPage > 1 &&
     interaction.cacheData.pageCount > 1
-    )
-      check = true;
-  if (!check) return;
+  );
+  if (!check) {
+    fn.rejectInteration(interaction, 'buttonUnexpected');
+    return;
+  }
   let queryResult;
   let dumpResult;
   interaction.cacheData.currentPage += fn.pageOffset(props.isNext);
