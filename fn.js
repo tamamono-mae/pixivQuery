@@ -297,6 +297,21 @@ function rejectInteration(interaction, reason) {
   return true;
 }
 
+function reactionParse(reactionStr) {
+  const pattern = [
+    /^<:(?<name>.*):(?<id>\d+)>/i,
+    /^<a:(?<name>.*):(?<id>\d+)>/i,
+    /^a:(?<name>.*):(?<id>\d+)/i,
+    /^(?<name>.*):(?<id>\d+)/i,
+  ];
+  let result = null;
+  for(let i=0;i<pattern.length;i++) {
+    result = pattern[i].exec(reactionStr);
+    if(result != null) break;
+  }
+  return result;
+}
+
 module.exports = {
   replyConfigMessage,
   pageOffset,
@@ -308,5 +323,6 @@ module.exports = {
   makePageRow,
   textArray2str,
   preFilter,
-  rejectInteration
+  rejectInteration,
+  reactionParse
 };

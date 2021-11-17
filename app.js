@@ -195,7 +195,9 @@ function setReaction(interaction, props) {
   //dbLog['type'] = 'Config';
   //Process setting while checking passed.
   props.reaction = interaction.options.get('reaction').value;
-  if (!emojis.includes(props.reaction)) {
+  let reactionEmoji = fn.reactionParse(props.reaction);
+  //>>need to check exist in current guild !!!
+  if (!emojis.includes(props.reaction) && (reactionEmoji == null)) {
     fn.rejectInteration(interaction, 'invalidEmoji');
     throw '[ info ] ' + interaction.user.id + '/' +
     interaction.channel.id + '/' + interaction.guild.id +
@@ -208,7 +210,8 @@ function setReaction(interaction, props) {
     });
     throw new Error('[ info ] No modification made');
   }
-  let writeData = { "reaction" : props.reaction };
+  let writeData = (reactionEmoji == null) ?
+    { "reaction" : props.reaction } : { "reaction" : reactionEmoji.groups.id };
   interaction.reply({
     content: props.reaction,
     ephemeral: true
