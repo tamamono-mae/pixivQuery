@@ -191,27 +191,48 @@ function dmHelpMessage(messageObject ,props) {
   return [logInfo];
 }
 
-function setReaction(interaction, props) {
+async function setReaction(interaction, props) {
   //dbLog['type'] = 'Config';
   //Process setting while checking passed.
   props.reaction = interaction.options.get('reaction').value;
-  let reactionEmoji = fn.reactionParse(props.reaction);
-  //>>need to check exist in current guild !!!
-  if (!emojis.includes(props.reaction) && (reactionEmoji == null)) {
-    fn.rejectInteration(interaction, 'invalidEmoji');
-    throw '[ info ] ' + interaction.user.id + '/' +
-    interaction.channel.id + '/' + interaction.guild.id +
-    ': Invalid emoji';
+  let targetEmoji;
+  let parsedEmoji = fn.reactionParse(props.reaction);
+  if(parsedEmoji != null)
+    targetEmojis = interaction.guild.emojis.cache.get(parsedEmoji.groups.id);
+  //Fetch if emoji been add after application start.
+  if ((targetEmoji == null) && (parsedEmoji != null)) {
+    let w;
+    try {
+      w = await interaction.guild.emojis.fetch(parsedEmoji.groups.id);
+    } catch (e) {
+      console.info('[ info ] ' + e.message);
+    } finally {
+      targetEmoji = w;
+    }
   }
-  if (props.reaction == interaction.configReaction) {
-    interaction.reply({
-      content: 'No modification made',
-      ephemeral: true
-    });
+  let isValidUnicodeEmoji = emojis.includes(props.reaction);
+  let isValidCustomEmoji = (targetEmoji != null);
+  if (!(isValidUnicodeEmoji || isValidCustomEmoji)) {
+    fn.rejectInteration(interaction, 'invalidEmoji');
+    console.info('[ info ] ' + interaction.user.id + '/' +
+    interaction.channel.id + '/' + interaction.guild.id +
+    ': Invalid emoji');
+    return;
+  }
+  //Checking this emoji is exist in current guild !!!
+  isValidCustomEmoji = isValidCustomEmoji ?
+    (targetEmoji.guild.id == interaction.guild.id) : false;
+  //There is a type is valid below this line.
+  if(!(isValidUnicodeEmoji || isValidCustomEmoji)) {
+    fn.rejectInteration(interaction, 'emojiUnusable');
+    return;
+  }
+  let emojiChar = isValidCustomEmoji ? targetEmoji.id : props.reaction;
+  if (emojiChar == interaction.configReaction) {
+    fn.rejectInteration(interaction, 'noModification');
     throw new Error('[ info ] No modification made');
   }
-  let writeData = (reactionEmoji == null) ?
-    { "reaction" : props.reaction } : { "reaction" : reactionEmoji.groups.id };
+  let writeData = { "reaction" : emojiChar };
   interaction.reply({
     content: props.reaction,
     ephemeral: true

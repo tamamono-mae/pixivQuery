@@ -293,6 +293,18 @@ function rejectInteration(interaction, reason) {
         ephemeral: true
       });
     break;
+    case 'emojiUnusable':
+      interaction.reply({
+        content: "This emoji should be add to this guild !",
+        ephemeral: true
+      });
+    break;
+    case 'noModification':
+      interaction.reply({
+        content: 'No modification made',
+        ephemeral: true
+      });
+    break;
   }
   return true;
 }
