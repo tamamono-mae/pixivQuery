@@ -101,7 +101,7 @@ async function pixivQuery(illustId, currentPage){
     "illustId": illustId,
     "timestamp": meta_preload_data['illust'][illustId]['createDate'].substr(0, 19)+'.000Z',
     //"image": 'https://pixiv.cat/'+illustId+imgCount(meta_preload_data['illust'][illustId]['pageCount'], currentPage)+'.jpg',
-    "image": meta_preload_data['illust'][illustId]['urls']['small'].replace('pximg.net','pixiv.cat').replace('_p0_master1200.','_p'+imgCount(meta_preload_data['illust'][illustId]['pageCount'], currentPage)+'_master1200.'),
+    "image": meta_preload_data['illust'][illustId]['urls']['regular'].replace('pximg.net','pixiv.cat').replace('_p0_master1200.','_p'+imgCount(meta_preload_data['illust'][illustId]['pageCount'], currentPage)+'_master1200.'),
     "thumbnail": meta_preload_data['user'][meta_preload_data['illust'][illustId]['userId']]['imageBig'].replace('pximg.net','pixiv.cat'),
     "pageCount": meta_preload_data['illust'][illustId]['pageCount'],
     "xRestrict": meta_preload_data['illust'][illustId]['xRestrict'],
