@@ -198,7 +198,7 @@ async function setReaction(interaction, props) {
   let targetEmoji;
   let parsedEmoji = fn.reactionParse(props.reaction);
   if(parsedEmoji != null)
-    targetEmojis = interaction.guild.emojis.cache.get(parsedEmoji.groups.id);
+    targetEmoji = interaction.guild.emojis.cache.get(parsedEmoji.groups.id);
   //Fetch if emoji been add after application start.
   if ((targetEmoji == null) && (parsedEmoji != null)) {
     let w;
