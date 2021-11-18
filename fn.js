@@ -334,7 +334,14 @@ async function cacheImage(data) {
     key: imgCacheKey
   }*/
   const imgCacheKey = 'cache.'+encodeURIComponent(data.url);
-  if (!data.dbCache.get(imgCacheKey)) {
+  let imgCacheUrl = data.dbCache.get(imgCacheKey);
+  //Get from db
+  if (!imgCacheUrl) {
+    imgCacheUrl = await data.dbop.fetchImageCache(data.url);
+    data.dbCache.put(imgCacheKey, imgCacheUrl);
+  }
+  //Get from search
+  if (!imgCacheUrl) {
     console.info('Caching ' + data.url);
     let cacheImgHeaders = {
       'Authorization': 'Bearer ' + data.bearer
@@ -342,6 +349,9 @@ async function cacheImage(data) {
     data.cacheImgformdata.append("image", data.url);
     data.cacheImgformdata.append("album", data.album);
     data.cacheImgformdata.append("type", "url");
+    data.cacheImgformdata.append("name", data.info.illustId + '.jpg');
+    data.cacheImgformdata.append("title", data.info.title);
+    data.cacheImgformdata.append("description", data.info.image);
 
     let requestOptions = {
       method: 'POST',
@@ -354,6 +364,7 @@ async function cacheImage(data) {
       .catch(error => console.error('error', error));
     console.info('Cached');
     data.dbCache.put(imgCacheKey, resJson.data.link);
+    data.dbop.writeImageCache({ source: data.url, url: resJson.data.link });
   }
   return data.dbCache.get(imgCacheKey);
 }

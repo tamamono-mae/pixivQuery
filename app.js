@@ -36,9 +36,10 @@ async function postImageInfo(messageObject ,props) {
     cacheImgformdata: new formData(),
     album: config.imgurAlbum,
     dbCache: dbCache,
-    fetch: fetch
+    fetch: fetch,
+    info: queryResult,
+    dbop: dbop
   });
-
   //Cache end
   replyContent["content"] =
   "This message was posted by\n" +
