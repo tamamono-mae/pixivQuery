@@ -20,19 +20,19 @@ const configDb = require('knex')({
 const dbCache = require('memory-cache');
 const { webIcon2Types } = require('./shareData.js');
 
-function fetchCache(messageObject) {
+function fetchCache(dataObject) {
   return cacheDb('cacheMsg')
-  .where('sourceChannelId', messageObject.channel.id)
-  .andWhere('replyId', messageObject.id)
+  .where('sourceChannelId', dataObject.channel.id)
+  .andWhere('replyId', dataObject.id)
   .then(rows => {
     if (rows.length == 0) return null;
     return rows[0];
   });
 }
 
-function fetchConfig(messageObject) {
+function fetchConfig(dataObject) {
   let guildSwitch = configDb(configTables[0])
-  .where('guildId', messageObject.guild.id)
+  .where('guildId', dataObject.guild.id)
   .select('functionSwitch').then(rows => {
     if (rows.length > 0) return [rows[0]['functionSwitch'], false];
     else {
@@ -40,8 +40,8 @@ function fetchConfig(messageObject) {
     }
   });
   let channelSwitch = configDb(configTables[1])
-  .where('guildId', messageObject.guild.id)
-  .andWhere('channelId', messageObject.channel.id)
+  .where('guildId', dataObject.guild.id)
+  .andWhere('channelId', dataObject.channel.id)
   .select('functionSwitch').then(rows => {
     if (rows.length > 0) return [rows[0]['functionSwitch'], false];
     else {
@@ -49,13 +49,25 @@ function fetchConfig(messageObject) {
     }
   });
   let reaction = configDb(configTables[1])
-  .where('guildId', messageObject.guild.id)
-  .andWhere('channelId', messageObject.channel.id)
+  .where('guildId', dataObject.guild.id)
+  .andWhere('channelId', dataObject.channel.id)
   .select('reaction').then(rows => {
-    if (rows.length > 0) return rows[0]['reaction'];
-    else {
+    if (rows.length <= 0) return config.defaultReaction;
+    if (rows[0].reaction.length < 10) return rows[0].reaction;
+    //need to re-verify
+    let targetEmoji = dataObject.guild.emojis.cache.get(rows[0].reaction);
+    //Fetch if emoji been add after application start.
+    if (targetEmoji == null) return dataObject.guild.emojis.fetch(rows[0].reaction).then(emojiObj => {
+      return rows[0]['reaction'];
+    }).catch(e => {
+      console.info('[ info ] ' + e.message);
+      //Remove invalid data
+      configDb(configTables[1])
+      .where('guildId', dataObject.guild.id)
+      .andWhere('channelId', dataObject.channel.id)
+      .del().then(()=>{});
       return config.defaultReaction;
-    }
+    });
   });
   return Promise.all([guildSwitch , channelSwitch, reaction]);
 }
@@ -64,11 +76,11 @@ function toCacheDB(data){
   cacheDb(cacheTables[0]).insert([data]).then(()=>{});
 }
 
-function toConfigDB(messageObject, data ,isGlobal = false) {
+function toConfigDB(dataObject, data ,isGlobal = false) {
   if (isGlobal) {
-    if (messageObject.guildFunctionIsDefault){
+    if (dataObject.guildFunctionIsDefault){
       let writeData = {
-        "guildId" : messageObject.guild.id,
+        "guildId" : dataObject.guild.id,
         "functionSwitch" : config.defaultPermissionBitfield
       };
       Object.keys(data).forEach(key => {
@@ -78,15 +90,15 @@ function toConfigDB(messageObject, data ,isGlobal = false) {
     }
     else
       configDb(configTables[0])
-      .where('guildId', messageObject.guild.id)
+      .where('guildId', dataObject.guild.id)
       .update(data)
       .then(()=>{});
   }
   else {
-    if (messageObject.channelFunctionIsDefault) {
+    if (dataObject.channelFunctionIsDefault) {
       let writeData = {
-        "guildId" : messageObject.guild.id,
-        "channelId" : messageObject.channel.id,
+        "guildId" : dataObject.guild.id,
+        "channelId" : dataObject.channel.id,
         "functionSwitch" : config.defaultPermissionBitfield,
         "reaction" : config.defaultReaction
       }
@@ -97,8 +109,8 @@ function toConfigDB(messageObject, data ,isGlobal = false) {
     }
     else
       configDb(configTables[1])
-      .where('guildId', messageObject.guild.id)
-      .andWhere('channelId', messageObject.channel.id)
+      .where('guildId', dataObject.guild.id)
+      .andWhere('channelId', dataObject.channel.id)
       .update(data)
       .then(()=>{});
   }
