@@ -546,7 +546,10 @@ async function postUrl(messageObject ,props) {
   messageObject.author.username +
   " (" + messageObject.author.id + ").\n" +
   props.urlContent;
-  let replyMessage = await messageObject.channel.send(props.urlContent);
+  let replyMessage = await messageObject.channel.send({
+    content: props.urlContent,
+    components: [fn.makePageRow({ pageCount: 1 })]
+  });
   //add reaction in background
   replyMessage.configReaction = messageObject.configReaction;
   replyMessage.react(messageObject.configReaction);
