@@ -324,6 +324,40 @@ function reactionParse(reactionStr) {
   return result;
 }
 
+async function cacheImage(data) {
+  /*{
+    url: replyContent.embeds[0].image.url,
+    bearer: config.imgurBearer,
+    cacheImgformdata: new formData(),
+    album: config.imgurAlbum,
+    dbCache: dbCache,
+    key: imgCacheKey
+  }*/
+  const imgCacheKey = 'cache.'+encodeURIComponent(data.url);
+  if (!data.dbCache.get(imgCacheKey)) {
+    console.info('Caching ' + data.url);
+    let cacheImgHeaders = {
+      'Authorization': 'Bearer ' + data.bearer
+    };
+    data.cacheImgformdata.append("image", data.url);
+    data.cacheImgformdata.append("album", data.album);
+    data.cacheImgformdata.append("type", "url");
+
+    let requestOptions = {
+      method: 'POST',
+      headers: cacheImgHeaders,
+      body: data.cacheImgformdata,
+      redirect: 'follow'
+    };
+    const resJson = await data.fetch("https://api.imgur.com/3/upload", requestOptions)
+      .then(response => response.json())
+      .catch(error => console.error('error', error));
+    console.info('Cached');
+    data.dbCache.put(imgCacheKey, resJson.data.link);
+  }
+  return data.dbCache.get(imgCacheKey);
+}
+
 module.exports = {
   replyConfigMessage,
   pageOffset,
@@ -336,5 +370,6 @@ module.exports = {
   textArray2str,
   preFilter,
   rejectInteration,
-  reactionParse
+  reactionParse,
+  cacheImage
 };

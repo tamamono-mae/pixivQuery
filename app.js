@@ -29,40 +29,17 @@ async function postImageInfo(messageObject ,props) {
   //post and get replyMessage first
   let replyContent = q.query2msg(queryResult, props.website);
   /* Remove Cache */
-  const imgCacheKey = 'cache.'+encodeURIComponent(replyContent.embeds[0].image.url);
-  if (!dbCache.get(imgCacheKey)) {
-    console.info('Caching ' + replyContent.embeds[0].image.url);
-    //let body = await fetch(replyContent.embed.image.url);
-    //console.log(messageObject.client);
-    //const cacheChannel = messageObject.client.channels.cache;
-    //console.log(cacheChannel);
-    //let cachedImg = await messageObject.client.channels.cache.get(config.workingSpaceChannelId).send(replyContent.embed.image.url);
 
-    let cacheImgHeaders = {
-      'Authorization': 'Bearer ' + config.imgurBearer
-    };
+  if (config.imgCacheEnable) replyContent.embeds[0].image.url = await fn.cacheImage({
+    url: replyContent.embeds[0].image.url,
+    bearer: config.imgurBearer,
+    cacheImgformdata: new formData(),
+    album: config.imgurAlbum,
+    dbCache: dbCache,
+    fetch: fetch
+  });
 
-    let cacheImgformdata = new formData();
-    cacheImgformdata.append("image", replyContent.embeds[0].image.url);
-    cacheImgformdata.append("album", config.imgurAlbum);
-    cacheImgformdata.append("type", "url");
-
-    let requestOptions = {
-      method: 'POST',
-      headers: cacheImgHeaders,
-      body: cacheImgformdata,
-      redirect: 'follow'
-    };
-
-    const resJson = await fetch("https://api.imgur.com/3/upload", requestOptions)
-      .then(response => response.json())
-      .catch(error => console.error('error', error));
-
-    console.info('Cached');
-    dbCache.put(imgCacheKey, resJson.data.link);
-  }
-  replyContent.embeds[0].image.url = dbCache.get(imgCacheKey);
-
+  //Cache end
   replyContent["content"] =
   "This message was posted by\n" +
   messageObject.author.username + " (" + messageObject.author.id + ").";
