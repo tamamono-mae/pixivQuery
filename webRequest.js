@@ -2,9 +2,12 @@ const fetch = require("node-fetch");
 const cheerio = require("cheerio");
 const formData = require("form-data");
 const { htmlToText } = require('html-to-text');
+const memoryCache = require('memory-cache');
+const fs = require('fs');
+const request = require('request');
+
 const config = require(require("./shareData.js").configPath);
 const env = require(config.configPath);
-const memoryCache = require('memory-cache');
 const { textArray2str } = require('./fn.js');
 const { webIcons } = require("./shareData.js");
 const { fetchImageCache, writeImageCache } = require('./dbOperation.js');
@@ -18,25 +21,55 @@ async function checkUrls(urlArr) {
   return null;
 }
 
-function mkfd(url) {
-  let formdata = new formData();
-  formdata.append("Content-Type", "application/octect-stream");
-  formdata.append("url", url);
-  formdata.append("frame", "1");
-  formdata.append("hide", "0");
-  formdata.append("database", "999");
-  return formdata;
-}
-
 function extractTag(tagObjs) {
   var tagNames = [];
   for(var i=0; i<tagObjs.length; i++) tagNames.push(tagObjs[i].tag);
   return tagNames;
 }
 
+function pixivImageRequest(imgUrl) {
+  let illustId = imgUrl.split('/');
+  illustId = illustId[illustId.length - 1];
+  illustId = illustId.split('_')[0];
+
+  let headers = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:89.0) Gecko/20100101 Firefox/94.0",
+    "Acept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+    "Accept-Language": "ja;q=0.8,en-US;q=0.6,en;q=0.4",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Referer": "https://www.pixiv.net/artworks/" + illustId,
+    "Content-Type": "text/html; charset=utf-8",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "same-origin",
+    "Sec-Fetch-User": "?1",
+    "DNT": "1",
+    "Sec-GPC": "1",
+    "Connection": "keep-alive",
+    "Cache-Control": "max-age=0"
+  };
+  return fetch(imgUrl,
+      {
+        method: 'GET',
+        headers: headers,
+        redirect: 'follow'
+      })
+      .then(res => res.buffer());
+}
+
 function saucenaoSearch(url){
   if (memoryCache.get('sauceSearch_'+url) != null) {
     return memoryCache.get('sauceSearch_'+url);
+  }
+  let mkfd = function(url) {
+    let formdata = new formData();
+    formdata.append("Content-Type", "application/octect-stream");
+    formdata.append("url", url);
+    formdata.append("frame", "1");
+    formdata.append("hide", "0");
+    formdata.append("database", "999");
+    return formdata;
   }
   var formdata = mkfd(url);
   return fetch('https://saucenao.com/search.php',
@@ -82,7 +115,6 @@ function imgCount(pageCount,currentPage) {
 }
 
 async function pixivQuery(illustId, currentPage){
-  //var formdata = mkfd(url);
   if (memoryCache.get('pixiv_'+illustId) != null) {
     return memoryCache.get('pixiv_'+illustId);
   }
@@ -103,7 +135,7 @@ async function pixivQuery(illustId, currentPage){
     "illustId": illustId,
     "timestamp": meta_preload_data['illust'][illustId]['createDate'].substr(0, 19)+'.000Z',
     //"image": 'https://pixiv.cat/'+illustId+imgCount(meta_preload_data['illust'][illustId]['pageCount'], currentPage)+'.jpg',
-    "image": meta_preload_data['illust'][illustId]['urls']['regular'].replace('pximg.net','pixiv.cat').replace('_p0_master1200.','_p'+imgCount(meta_preload_data['illust'][illustId]['pageCount'], currentPage)+'_master1200.'),
+    "image": meta_preload_data['illust'][illustId]['urls']['small'].replace('pximg.net','pixiv.cat').replace('_p0_master1200.','_p'+imgCount(meta_preload_data['illust'][illustId]['pageCount'], currentPage)+'_master1200.'),
     "thumbnail": meta_preload_data['user'][meta_preload_data['illust'][illustId]['userId']]['imageBig'].replace('pximg.net','pixiv.cat'),
     "pageCount": meta_preload_data['illust'][illustId]['pageCount'],
     "xRestrict": meta_preload_data['illust'][illustId]['xRestrict'],
@@ -172,15 +204,32 @@ async function cacheImage(data) {
   //Get from search
   if (!imgCacheUrl) {
     console.info('Caching ' + data.url);
-    let cacheImgHeaders = {
-      'Authorization': 'Bearer ' + env.imgurBearer
-    };
-    cacheImgformdata.append("image", data.url);
+
     cacheImgformdata.append("album",env.imgurAlbum);
-    cacheImgformdata.append("type", "url");
     cacheImgformdata.append("name", data.info.illustId + '.jpg');
     cacheImgformdata.append("title", data.info.title);
     cacheImgformdata.append("description", data.info.image);
+    switch(data.cacheMethod) {
+      case 1:
+        cacheImgformdata.append("image", data.url);
+        cacheImgformdata.append("type", "url");
+      break;
+      case 2:
+        //Request image from pixiv
+        let imageData = await pixivImageRequest(data.url);
+        //Apply data to formdata
+        cacheImgformdata.append("image", imageData.toString('base64'));
+        cacheImgformdata.append("type", "base64");
+      break;
+      default:
+      return data.url;
+    }
+
+    let cacheImgHeaders = {
+      'Authorization': 'Bearer ' + env.imgurBearer,
+      ...cacheImgformdata.getHeaders()
+    };
+
     let requestOptions = {
       method: 'POST',
       headers: cacheImgHeaders,
@@ -199,8 +248,8 @@ async function cacheImage(data) {
 
 module.exports = {
   saucenaoSearch,
-  mkfd,
   pixivQuery,
   query2msg,
-  cacheImage
+  cacheImage,
+  pixivImageRequest
 };
