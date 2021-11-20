@@ -1,15 +1,16 @@
 const config = require(require("./shareData.js").configPath);
-const { Routes } = require('discord-api-types/v9');
-const { REST } = require('@discordjs/rest');
-const rest = new REST({ version: '9' }).setToken(config.BOT_TOKEN);
+const fetch = require("node-fetch");
+const formData = require("form-data");
+const fs = require('fs');
+
+const dbCache = require('memory-cache');
 const sd = require("./shareData.js");
 const dbop = require("./dbOperation.js");
 const fn = require("./fn.js");
-const q = require("./query.js");
+const q = require("./webRequest.js");
 const { emojis } = require("./emoji.json");
-const dbCache = require('memory-cache');
-const fetch = require("node-fetch");
-const formData = require("form-data");
+const { initGuildCmd } = require("./restRequest.js");
+
 
 async function postImageInfo(messageObject ,props) {
   let queryResult;
@@ -30,7 +31,7 @@ async function postImageInfo(messageObject ,props) {
   let replyContent = q.query2msg(queryResult, props.website);
   /* Remove Cache */
 
-  if (config.imgCacheEnable) replyContent.embeds[0].image.url = await fn.cacheImage({
+  if (config.imageCacheMethod > 0) replyContent.embeds[0].image.url = await fn.cacheImage({
     url: replyContent.embeds[0].image.url,
     bearer: config.imgurBearer,
     cacheImgformdata: new formData(),
@@ -38,7 +39,9 @@ async function postImageInfo(messageObject ,props) {
     dbCache: dbCache,
     fetch: fetch,
     info: queryResult,
-    dbop: dbop
+    dbop: dbop,
+    fs: fs,
+    imageCacheMethod: config.imageCacheMethod
   });
   //Cache end
   replyContent["content"] =
@@ -619,11 +622,7 @@ async function registerCommand(interaction, props) {
   managerRoles = managerRoles.filter(
     values => guildRoles.includes(values)
   );
-  fn.initGuildCmd(
-    rest, Routes, config.userID, dbCache,
-    interaction.guild, managerRoles,
-    sd.commands,
-  );
+  initGuildCmd(interaction.guild, managerRoles);
   interaction.reply({
     content: 'Done !',
     ephemeral: true
@@ -665,11 +664,7 @@ async function managerRoleOp(interaction, props) {
     default:
       fn.rejectInteration(interaction, 'invalidParameter');
   }
-  fn.initGuildCmd(
-    rest, Routes, config.userID, dbCache,
-    interaction.guild, roleList,
-    sd.commands,
-  );
+  initGuildCmd( interaction.guild, roleList );
 }
 
 module.exports = {

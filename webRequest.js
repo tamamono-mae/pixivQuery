@@ -3,7 +3,7 @@ const cheerio = require("cheerio");
 const formData = require("form-data");
 const { htmlToText } = require('html-to-text');
 const config = require(require("./shareData.js").configPath);
-const webCache = require('memory-cache');
+const memoryCache = require('memory-cache');
 const { textArray2str } = require('./fn.js');
 const { webIcons } = require("./shareData.js");
 
@@ -33,8 +33,8 @@ function extractTag(tagObjs) {
 }
 
 function saucenaoSearch(url){
-  if (webCache.get('sauceSearch_'+url) != null) {
-    return webCache.get('sauceSearch_'+url);
+  if (memoryCache.get('sauceSearch_'+url) != null) {
+    return memoryCache.get('sauceSearch_'+url);
   }
   var formdata = mkfd(url);
   return fetch('https://saucenao.com/search.php',
@@ -68,7 +68,7 @@ function saucenaoSearch(url){
   })
   .then(results => {
     let data = (results.length > 0) ? checkUrls(results) : null;
-    webCache.put('sauceSearch_'+url, data, config.cacheTimeout);
+    memoryCache.put('sauceSearch_'+url, data, config.cacheTimeout);
     return data;
   })
 }
@@ -81,8 +81,8 @@ function imgCount(pageCount,currentPage) {
 
 async function pixivQuery(illustId, currentPage){
   //var formdata = mkfd(url);
-  if (webCache.get('pixiv_'+illustId) != null) {
-    return webCache.get('pixiv_'+illustId);
+  if (memoryCache.get('pixiv_'+illustId) != null) {
+    return memoryCache.get('pixiv_'+illustId);
   }
   let body = await fetch('https://www.pixiv.net/artworks/'+illustId)
   .then(res => res.text());
@@ -107,7 +107,8 @@ async function pixivQuery(illustId, currentPage){
     "xRestrict": meta_preload_data['illust'][illustId]['xRestrict'],
     "currentPage": currentPage
   } : null;
-  webCache.put('webCache_pixiv_'+data.illustId, data, config.cacheTimeout);
+  memoryCache.put('webCache_pixiv_'+data.illustId, data, config.cacheTimeout);
+  console.log(data.image);
   return data;
 }
 

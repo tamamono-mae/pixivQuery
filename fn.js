@@ -27,123 +27,6 @@ function urlDump(content) {
   return null;
 }
 
-async function initGuildCmd(
-  rest, Routes, userID, dbCache,
-  guild, managerRoles,
-  commands) {
-  commands.forEach((command, i) => {
-    command.permissions = [{
-      id: guild.ownerID,
-      type: 'USER',
-      permission: true,
-    }];
-    managerRoles.forEach((roleID, i) => {
-      command.permissions.push({
-        id: roleID,
-        type: 'ROLE',
-        permission: true,
-      });
-    });
-  });
-
-  try {
-    await rest.put(
-      Routes.applicationGuildCommands(userID, guild.id),
-      { body: commands }
-    );
-  } catch (error) {
-    switch( error.rawError.code ) {
-      case 50001:
-        console.warn(
-          "[ warn ] Guild ID = " +
-          guild.id +
-          ": Cannot update slash command without 'applications.commands' scope."
-        );
-      break;
-      default:
-      console.error(error);
-    }
-  } finally {
-    if(dbCache.get('managerRoles_guildId'+guild.id) != null)
-      dbCache.del('managerRoles_guildId'+guild.id);
-    dbCache.put('managerRoles_guildId'+guild.id, managerRoles);
-  }
-}
-
-async function initGlobalCmd(client) {
-  //initialize const
-  const config = require(require("./shareData.js").configPath);
-  const { Routes } = require('discord-api-types/v9');
-  const { REST } = require('@discordjs/rest');
-  const rest = new REST({ version: '9' }).setToken(config.BOT_TOKEN);
-  const { globalCommands } = require("./shareData.js");
-  //initialize commands
-  console.info(`[ info ] Initializing global commands ...`);
-  try {
-    await rest.put(
-      Routes.applicationCommands(config.userID),
-      { body: globalCommands }
-    );
-    console.info(`[ info ] Initializing global commands finished.`);
-  } catch (error) {
-    console.error(error);
-  }
-}
-
-async function initCmdAll(client) {
-  //Check first
-  if (client.guildsHandling == null) client.guildsHandling = [];
-  const guildCache = client.guilds.cache;
-  const guildsShouldHandle = Array.from(guildCache.keys());
-  const guildsNew = guildsShouldHandle.filter(
-    values => !client.guildsHandling.includes(values)
-  );
-  const guildsLeft = client.guildsHandling.filter(
-    values => !guildsShouldHandle.includes(values)
-  );
-  if (guildsLeft.length != 0) client.guildsHandling = guildsShouldHandle;
-  if (guildsNew.length == 0) return;
-  //initialize const
-  const config = require(require("./shareData.js").configPath);
-  const { Routes } = require('discord-api-types/v9');
-  const { REST } = require('@discordjs/rest');
-  const rest = new REST({ version: '9' }).setToken(config.BOT_TOKEN);
-  const { commands } = require("./shareData.js");
-  const permissionManage = require("./shareData.js").permission.userManageMassage;
-  const { getManagerRole } = require("./dbOperation.js");
-  const dbCache = require('memory-cache');
-  //initialize commands
-  console.info(`[ info ] Initializing guild commands ...`);
-  let promisePool = [];
-  let managerRoles;
-  //Make a task array for multi-tasking.
-  for (let i=0; i<guildsNew.length; i++) {
-    managerRoles = await getManagerRole(guildsNew[i]);
-    promisePool.push(
-      initGuildCmd(
-        rest, Routes, config.userID, dbCache,
-        guildCache.get(guildsNew[i]), managerRoles,
-        commands
-      )
-    );
-  }
-  //Launch tasks.
-  await Promise.all(promisePool);
-  //Register handling guilds.
-  client.guildsHandling = guildsShouldHandle;
-  console.info(`[ info ] Initializing guild commands finished.`);
-}
-
-function checkParameterUndfeind(interaction, varKey) {
-  let parameterUndfeind = [];
-  let varKeyCurrent;
-  for(let i=0; i<varKey.length; i++){
-    varKeyCurrent = interaction.options.get(varKey[i]);
-    if(varKeyCurrent == null) parameterUndfeind.push(varKey[i]);
-  }
-  return parameterUndfeind;
-}
-
 function makePageRow(data) {
   let pageRow = {
     type: 'ACTION_ROW',
@@ -194,6 +77,16 @@ function makePageRow(data) {
       pageRow.components[0]
     ]
   };
+}
+
+function checkParameterUndfeind(interaction, varKey) {
+  let parameterUndfeind = [];
+  let varKeyCurrent;
+  for(let i=0; i<varKey.length; i++){
+    varKeyCurrent = interaction.options.get(varKey[i]);
+    if(varKeyCurrent == null) parameterUndfeind.push(varKey[i]);
+  }
+  return parameterUndfeind;
 }
 
 function textArray2str(textArray, separator) {
@@ -373,9 +266,6 @@ module.exports = {
   replyConfigMessage,
   pageOffset,
   urlDump,
-  initGuildCmd,
-  initCmdAll,
-  initGlobalCmd,
   checkParameterUndfeind,
   makePageRow,
   textArray2str,

@@ -2,9 +2,8 @@ const npath = require('path');
 const winston = require('winston');
 const config = require(require("./shareData.js").configPath);
 const arch = require("./architecture.js");
-const {
-	initCmdAll, initCmd, initGlobalCmd, preFilter, rejectInteration
-} = require("./fn.js");
+const { preFilter, rejectInteration } = require("./fn.js");
+const { initCmdAll, initCmd, initGlobalCmd } = require("./restRequest.js");
 const { setEmbedMsgCache } = require("./dbOperation.js");
 
 //Discordjs fix
