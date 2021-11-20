@@ -27,7 +27,6 @@ async function postImageInfo(messageObject ,props) {
   /* Remove Cache */
 
   if (config.imageCacheMethod > 0) replyContent.embeds[0].image.url = await q.cacheImage({
-    url: replyContent.embeds[0].image.url,
     info: queryResult,
     cacheMethod: config.imageCacheMethod
   });
