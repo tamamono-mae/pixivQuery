@@ -217,51 +217,6 @@ function reactionParse(reactionStr) {
   return result;
 }
 
-async function cacheImage(data) {
-  /*{
-    url: replyContent.embeds[0].image.url,
-    bearer: config.imgurBearer,
-    cacheImgformdata: new formData(),
-    album: config.imgurAlbum,
-    dbCache: dbCache,
-    key: imgCacheKey
-  }*/
-  const imgCacheKey = 'cache.'+encodeURIComponent(data.url);
-  let imgCacheUrl = data.dbCache.get(imgCacheKey);
-  //Get from db
-  if (!imgCacheUrl) {
-    imgCacheUrl = await data.dbop.fetchImageCache(data.url);
-    data.dbCache.put(imgCacheKey, imgCacheUrl);
-  }
-  //Get from search
-  if (!imgCacheUrl) {
-    console.info('Caching ' + data.url);
-    let cacheImgHeaders = {
-      'Authorization': 'Bearer ' + data.bearer
-    };
-    data.cacheImgformdata.append("image", data.url);
-    data.cacheImgformdata.append("album", data.album);
-    data.cacheImgformdata.append("type", "url");
-    data.cacheImgformdata.append("name", data.info.illustId + '.jpg');
-    data.cacheImgformdata.append("title", data.info.title);
-    data.cacheImgformdata.append("description", data.info.image);
-
-    let requestOptions = {
-      method: 'POST',
-      headers: cacheImgHeaders,
-      body: data.cacheImgformdata,
-      redirect: 'follow'
-    };
-    const resJson = await data.fetch("https://api.imgur.com/3/upload", requestOptions)
-      .then(response => response.json())
-      .catch(error => console.error('error', error));
-    console.info('Cached');
-    data.dbCache.put(imgCacheKey, resJson.data.link);
-    data.dbop.writeImageCache({ source: data.url, url: resJson.data.link });
-  }
-  return data.dbCache.get(imgCacheKey);
-}
-
 module.exports = {
   replyConfigMessage,
   pageOffset,
@@ -271,6 +226,5 @@ module.exports = {
   textArray2str,
   preFilter,
   rejectInteration,
-  reactionParse,
-  cacheImage
+  reactionParse
 };

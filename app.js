@@ -31,16 +31,9 @@ async function postImageInfo(messageObject ,props) {
   let replyContent = q.query2msg(queryResult, props.website);
   /* Remove Cache */
 
-  if (config.imageCacheMethod > 0) replyContent.embeds[0].image.url = await fn.cacheImage({
+  if (config.imageCacheMethod > 0) replyContent.embeds[0].image.url = await q.cacheImage({
     url: replyContent.embeds[0].image.url,
-    bearer: config.imgurBearer,
-    cacheImgformdata: new formData(),
-    album: config.imgurAlbum,
-    dbCache: dbCache,
-    fetch: fetch,
     info: queryResult,
-    dbop: dbop,
-    fs: fs,
     imageCacheMethod: config.imageCacheMethod
   });
   //Cache end

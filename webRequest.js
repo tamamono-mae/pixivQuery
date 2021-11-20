@@ -6,6 +6,7 @@ const config = require(require("./shareData.js").configPath);
 const memoryCache = require('memory-cache');
 const { textArray2str } = require('./fn.js');
 const { webIcons } = require("./shareData.js");
+const { fetchImageCache, writeImageCache } = require('./dbOperation.js');
 
 async function checkUrls(urlArr) {
   for(var i=0;i<urlArr.length;i++) {
@@ -159,4 +160,57 @@ function query2msg(data,type){
   }
 }
 
-module.exports = { saucenaoSearch, mkfd, pixivQuery, query2msg };
+async function cacheImage(data) {
+  /*{
+    url: replyContent.embeds[0].image.url,
+    bearer: config.imgurBearer,
+    cacheImgformdata: new formData(),
+    album: config.imgurAlbum,
+    dbCache: dbCache,
+    key: imgCacheKey
+  }*/
+  let cacheImgformdata = new formData();
+  const imgCacheKey = 'cache.'+encodeURIComponent(data.url);
+  let imgCacheUrl = memoryCache.get(imgCacheKey);
+  //Get from db
+  if (!imgCacheUrl) {
+    imgCacheUrl = await fetchImageCache(data.url);
+    memoryCache.put(imgCacheKey, imgCacheUrl);
+  }
+  //Get from search
+  if (!imgCacheUrl) {
+    console.info('Caching ' + data.url);
+    let cacheImgHeaders = {
+      'Authorization': 'Bearer ' + config.imgurBearer
+    };
+    cacheImgformdata.append("image", data.url);
+    cacheImgformdata.append("album",config.imgurAlbum);
+    cacheImgformdata.append("type", "url");
+    cacheImgformdata.append("name", data.info.illustId + '.jpg');
+    cacheImgformdata.append("title", data.info.title);
+    cacheImgformdata.append("description", data.info.image);
+    console.log(cacheImgformdata);
+    let requestOptions = {
+      method: 'POST',
+      headers: cacheImgHeaders,
+      body: cacheImgformdata,
+      redirect: 'follow'
+    };
+    const resJson = await fetch("https://api.imgur.com/3/upload", requestOptions)
+      .then(response => response.json())
+      .catch(error => console.error('error', error));
+    console.info('Cached');
+    console.log(resJson.data);
+    memoryCache.put(imgCacheKey, resJson.data.link);
+    writeImageCache({ source: data.url, url: resJson.data.link });
+  }
+  return memoryCache.get(imgCacheKey);
+}
+
+module.exports = {
+  saucenaoSearch,
+  mkfd,
+  pixivQuery,
+  query2msg,
+  cacheImage
+};
