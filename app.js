@@ -1,8 +1,4 @@
 const config = require(require("./shareData.js").configPath);
-const fetch = require("node-fetch");
-const formData = require("form-data");
-const fs = require('fs');
-
 const dbCache = require('memory-cache');
 const sd = require("./shareData.js");
 const dbop = require("./dbOperation.js");
@@ -10,7 +6,6 @@ const fn = require("./fn.js");
 const q = require("./webRequest.js");
 const { emojis } = require("./emoji.json");
 const { initGuildCmd } = require("./restRequest.js");
-
 
 async function postImageInfo(messageObject ,props) {
   let queryResult;
