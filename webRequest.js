@@ -3,6 +3,7 @@ const cheerio = require("cheerio");
 const formData = require("form-data");
 const { htmlToText } = require('html-to-text');
 const config = require(require("./shareData.js").configPath);
+const env = require(config.configPath);
 const memoryCache = require('memory-cache');
 const { textArray2str } = require('./fn.js');
 const { webIcons } = require("./shareData.js");
@@ -109,7 +110,6 @@ async function pixivQuery(illustId, currentPage){
     "currentPage": currentPage
   } : null;
   memoryCache.put('webCache_pixiv_'+data.illustId, data, config.cacheTimeout);
-  console.log(data.image);
   return data;
 }
 
@@ -161,14 +161,6 @@ function query2msg(data,type){
 }
 
 async function cacheImage(data) {
-  /*{
-    url: replyContent.embeds[0].image.url,
-    bearer: config.imgurBearer,
-    cacheImgformdata: new formData(),
-    album: config.imgurAlbum,
-    dbCache: dbCache,
-    key: imgCacheKey
-  }*/
   let cacheImgformdata = new formData();
   const imgCacheKey = 'cache.'+encodeURIComponent(data.url);
   let imgCacheUrl = memoryCache.get(imgCacheKey);
@@ -181,15 +173,14 @@ async function cacheImage(data) {
   if (!imgCacheUrl) {
     console.info('Caching ' + data.url);
     let cacheImgHeaders = {
-      'Authorization': 'Bearer ' + config.imgurBearer
+      'Authorization': 'Bearer ' + env.imgurBearer
     };
     cacheImgformdata.append("image", data.url);
-    cacheImgformdata.append("album",config.imgurAlbum);
+    cacheImgformdata.append("album",env.imgurAlbum);
     cacheImgformdata.append("type", "url");
     cacheImgformdata.append("name", data.info.illustId + '.jpg');
     cacheImgformdata.append("title", data.info.title);
     cacheImgformdata.append("description", data.info.image);
-    console.log(cacheImgformdata);
     let requestOptions = {
       method: 'POST',
       headers: cacheImgHeaders,
@@ -200,7 +191,6 @@ async function cacheImage(data) {
       .then(response => response.json())
       .catch(error => console.error('error', error));
     console.info('Cached');
-    console.log(resJson.data);
     memoryCache.put(imgCacheKey, resJson.data.link);
     writeImageCache({ source: data.url, url: resJson.data.link });
   }

@@ -1,4 +1,6 @@
-const config = require(require("./shareData.js").configPath);
+const config = require(
+	require(require("./shareData.js").configPath).configPath
+);
 const { Routes } = require('discord-api-types/v9');
 const { REST } = require('@discordjs/rest');
 const memoryCache = require('memory-cache');

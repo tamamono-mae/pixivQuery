@@ -1,4 +1,4 @@
-const configPath = "../token/config5.json";
+const configPath = "../env/config5.json";
 const permission = {
   botSendMessage: 412384349248n,
   botManageMassage: 534790925376n,

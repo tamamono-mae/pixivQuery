@@ -1,18 +1,19 @@
 const config = require(require("./shareData.js").configPath);
+const env = require(config.configPath);
 const configTables = ['guildFunction', 'channelFunction', 'guildManager' ];
 const cacheTables = ['cacheMsg', 'imgurImage'];
 
 const cacheDb = require('knex')({
   client: 'sqlite3',
   connection: {
-    filename: config.pathToCacheDb
+    filename: env.pathToCacheDb
   },
   useNullAsDefault: true
 });
 const configDb = require('knex')({
   client: 'sqlite3',
   connection: {
-    filename: config.pathToConfigDb
+    filename: env.pathToConfigDb
   },
   useNullAsDefault: true
 });
@@ -229,6 +230,12 @@ function writeImageCache(data) {
   cacheDb(cacheTables[1]).insert([data]).then(()=>{});
 }
 
+function removeRecord(messageObj) {
+  cacheDb('cacheMsg')
+  .where('sourceChannelId', messageObj.channel.id)
+  .andWhere('replyId', messageObj.id).del().then(()=>{});
+}
+
 module.exports = {
   fetchCache,
   fetchConfig,
@@ -241,5 +248,6 @@ module.exports = {
   managerRoleHas,
   managerRoleDb,
   fetchImageCache,
-  writeImageCache
+  writeImageCache,
+  removeRecord
 };

@@ -116,31 +116,6 @@ function adminCommandSwitchOrder(interaction) {
   return [];
 }
 
-function msgAdminCommandOrder(client) {
-  if (permissionCheckUser(client, 'moduleSwitch', authorId = '0'))
-    return [
-      {
-        patt: new RegExp(`^${config.prefix} setReaction (?<reaction>..)`,'i'),
-        action: a.setReaction,
-        varExt: { opCode: "setReaction" }
-      },
-      {
-        patt: new RegExp(`^${config.prefix} status`,'i'),
-        action: a.dmModuleStatus,
-        varExt: {
-          opCode: "status",
-          color: config.colors[0],
-          thumbnail: config.thumbnail}
-      },
-      {
-        patt: new RegExp(`^${config.prefix} (?<module>.+) (?<operation>enable|disable)(?<isGlobal> global)*`,'i'),
-        action: a.moduleSwitch,
-        varExt: { opCode: "moduleSwitch" }
-      }
-    ];
-  return [];
-}
-
 function permissionCheckBot(client) {
   let messageObject = {};
   switch(client.objType) {
@@ -255,18 +230,6 @@ function msgRouter(messageObj) {
   let message = messageObj.content;
   let route = [
     ...msgSwitchOrder(messageObj),
-    /*...msgAdminCommandOrder(messageObj),
-    {
-      patt: new RegExp(`^${config.prefix} help`,'i'),
-      action: a.dmHelpMessage,
-      varExt: {
-        opCode: "help",
-        color: config.colors[1],
-        thumbnail: config.thumbnail,
-        description: config.commandDescription
-      }
-    }
-    */
   ];
   //let matchRoute = route.find((route) => message.match(route.patt));
   for (let i=0;i<route.length;i++) {

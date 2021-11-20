@@ -1,10 +1,12 @@
 const npath = require('path');
 const winston = require('winston');
-const config = require(require("./shareData.js").configPath);
+const config = require(
+	require(require("./shareData.js").configPath).configPath
+);
 const arch = require("./architecture.js");
 const { preFilter, rejectInteration } = require("./fn.js");
 const { initCmdAll, initCmd, initGlobalCmd } = require("./restRequest.js");
-const { setEmbedMsgCache } = require("./dbOperation.js");
+const { setEmbedMsgCache, removeRecord } = require("./dbOperation.js");
 
 //Discordjs fix
 const { Client, Intents } = require('discord.js');
@@ -16,13 +18,6 @@ const client = new Client({
 	]
 });
 //Discordjs fix end
-const cacheDb = require('knex')({
-  client: 'sqlite3',
-  connection: {
-    filename: config.pathToCacheDb
-  },
-  useNullAsDefault: true
-});
 const logger = winston.createLogger({
   level: 'info',
   format: winston.format.json(),
@@ -145,7 +140,5 @@ client.on('ready', () => {
 });
 
 client.on("messageDelete", (message) => {
-  cacheDb('cacheMsg')
-  .where('sourceChannelId', message.channel.id)
-  .andWhere('replyId', message.id).del().then(()=>{});
+	removeRecord(message);
 });
