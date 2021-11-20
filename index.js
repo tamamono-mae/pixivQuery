@@ -6,7 +6,7 @@ const config = require(
 const arch = require("./architecture.js");
 const { preFilter, rejectInteration } = require("./fn.js");
 const { initCmdAll, initCmd, initGlobalCmd } = require("./restRequest.js");
-const { setEmbedMsgCache, removeRecord } = require("./dbOperation.js");
+const { setEmbedMsgCache, removeRecord, removeTimeout } = require("./dbOperation.js");
 
 //Discordjs fix
 const { Client, Intents } = require('discord.js');
@@ -134,9 +134,7 @@ client.on('ready', () => {
 	setInterval(( () => {
 		initCmdAll(client);
   } ), 3600000);
-  setInterval(( () => {
-    cacheDb('cacheMsg').where('sourceTimestamp', '<', Date.now()-86400000).del().then(()=>{});
-  } ), 600000);
+  setInterval(( () => { removeTimeout(86400000) }), 600000);
 });
 
 client.on("messageDelete", (message) => {

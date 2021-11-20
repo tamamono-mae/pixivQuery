@@ -236,6 +236,12 @@ function removeRecord(messageObj) {
   .andWhere('replyId', messageObj.id).del().then(()=>{});
 }
 
+function removeTimeout(time) {
+  cacheDb('cacheMsg')
+  .where('sourceTimestamp', '<', Date.now() - time)
+  .del().then(()=>{});
+}
+
 module.exports = {
   fetchCache,
   fetchConfig,
