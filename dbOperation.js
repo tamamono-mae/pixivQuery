@@ -69,6 +69,7 @@ function fetchConfig(dataObject) {
       .del().then(()=>{});
       return config.defaultReaction;
     });
+    return rows[0].reaction;
   });
   return Promise.all([guildSwitch , channelSwitch, reaction]);
 }
@@ -255,5 +256,6 @@ module.exports = {
   managerRoleDb,
   fetchImageCache,
   writeImageCache,
-  removeRecord
+  removeRecord,
+  removeTimeout
 };
