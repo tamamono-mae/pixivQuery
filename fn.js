@@ -79,6 +79,13 @@ function makePageRow(data) {
   };
 }
 
+function disableAllButtons(row){
+  row.components.forEach(button => {
+    button.disabled = true;
+  });
+  return row;
+}
+
 function checkParameterUndfeind(interaction, varKey) {
   let parameterUndfeind = [];
   let varKeyCurrent;
@@ -223,6 +230,7 @@ module.exports = {
   urlDump,
   checkParameterUndfeind,
   makePageRow,
+  disableAllButtons,
   textArray2str,
   preFilter,
   rejectInteration,

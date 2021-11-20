@@ -26,10 +26,8 @@ async function postImageInfo(messageObject ,props) {
   let replyContent = q.query2msg(queryResult, props.website);
   /* Remove Cache */
 
-  if (config.imageCacheMethod > 0) replyContent.embeds[0].image.url = await q.cacheImage({
-    info: queryResult,
-    cacheMethod: config.imageCacheMethod
-  });
+  if (config.imageCacheMethod > 0)
+    replyContent.embeds[0].image.url = await q.cacheImage(queryResult);
   //Cache end
   replyContent["content"] =
   "This message was posted by\n" +
@@ -436,6 +434,9 @@ async function turnPage(interaction, props) {
     fn.rejectInteration(interaction, 'buttonUnexpected');
     return;
   }
+  await interaction.update({
+    components: [fn.disableAllButtons(interaction.message.components[0])]
+  });
   let queryResult;
   let dumpResult;
   interaction.cacheData.currentPage += fn.pageOffset(props.isNext);
@@ -445,10 +446,23 @@ async function turnPage(interaction, props) {
       queryResult = await q.pixivQuery(dumpResult['uid'], interaction.cacheData.currentPage);
       break;
   }
-  interaction.update({
-    embeds: q.query2msg(queryResult,dumpResult['website']).embeds,
-    components: [fn.makePageRow(queryResult)]
-  });
+
+  let replyContent = q.query2msg(queryResult,dumpResult['website']);
+
+  if (config.imageCacheMethod > 0) {
+    replyContent.embeds[0].image.url = await q.cacheImage(queryResult);
+    await interaction.editReply({
+      embeds: replyContent.embeds,
+      components: [fn.makePageRow(queryResult)]
+    });
+  }
+  if (config.imageCacheMethod == 0) {
+    await interaction.editReply({
+      embeds: replyContent.embeds,
+      components: [fn.makePageRow(queryResult)]
+    });
+  }
+
   dbop.updateCurrentPage(interaction);
   //Update cache data
   let cacheKey = 'cacheMsg_' + interaction.message.id + '_' + interaction.message.channel.id;

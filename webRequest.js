@@ -136,7 +136,7 @@ async function pixivQuery(illustId, currentPage){
     "timestamp": meta_preload_data['illust'][illustId]['createDate'].substr(0, 19)+'.000Z',
     //"image": 'https://pixiv.cat/'+illustId+imgCount(meta_preload_data['illust'][illustId]['pageCount'], currentPage)+'.jpg',
     "image": meta_preload_data['illust'][illustId]['urls']['small'].replace('pximg.net','pixiv.cat').replace('_p0_master1200.','_p'+imgCount(meta_preload_data['illust'][illustId]['pageCount'], currentPage)+'_master1200.'),
-    "image_pixiv": meta_preload_data['illust'][illustId]['urls']['small'],
+    "image_pixiv": meta_preload_data['illust'][illustId]['urls']['small'].replace('_p0_master1200.','_p'+imgCount(meta_preload_data['illust'][illustId]['pageCount'], currentPage)+'_master1200.'),
     "thumbnail": meta_preload_data['user'][meta_preload_data['illust'][illustId]['userId']]['imageBig'].replace('pximg.net','pixiv.cat'),
     "pageCount": meta_preload_data['illust'][illustId]['pageCount'],
     "xRestrict": meta_preload_data['illust'][illustId]['xRestrict'],
@@ -193,37 +193,37 @@ function query2msg(data,type){
   }
 }
 
-async function cacheImage(data) {
+async function cacheImage(info) {
   let cacheImgformdata = new formData();
-  const imgCacheKey = 'cache.'+encodeURIComponent(data.info.image_pixiv);
+  const imgCacheKey = 'cache.'+encodeURIComponent(info.image_pixiv);
   let imgCacheUrl = memoryCache.get(imgCacheKey);
   //Get from db
   if (!imgCacheUrl) {
-    imgCacheUrl = await fetchImageCache(data.info.image_pixiv);
+    imgCacheUrl = await fetchImageCache(info.image_pixiv);
     memoryCache.put(imgCacheKey, imgCacheUrl);
   }
   //Get from search
   if (!imgCacheUrl) {
-    console.info('Caching ' + data.info.image_pixiv);
+    console.info('Caching ' + info.image_pixiv);
 
     cacheImgformdata.append("album",env.imgurAlbum);
-    cacheImgformdata.append("name", data.info.illustId + '.jpg');
-    cacheImgformdata.append("title", data.info.title);
-    cacheImgformdata.append("description", data.info.image);
-    switch(data.cacheMethod) {
+    cacheImgformdata.append("name", info.illustId + '.jpg');
+    cacheImgformdata.append("title", info.title);
+    cacheImgformdata.append("description", info.image);
+    switch(config.imageCacheMethod) {
       case 1:
-        cacheImgformdata.append("image", data.info.image);
+        cacheImgformdata.append("image", info.image);
         cacheImgformdata.append("type", "url");
       break;
       case 2:
         //Request image from pixiv
-        let imageData = await pixivImageRequest(data.info.image_pixiv);
+        let imageData = await pixivImageRequest(info.image_pixiv);
         //Apply data to formdata
         cacheImgformdata.append("image", imageData.toString('base64'));
         cacheImgformdata.append("type", "base64");
       break;
       default:
-      return data.info.image;
+      return info.image;
     }
 
     let cacheImgHeaders = {
@@ -242,7 +242,7 @@ async function cacheImage(data) {
       .catch(error => console.error('error', error));
     console.info('Cached');
     memoryCache.put(imgCacheKey, resJson.data.link);
-    writeImageCache({ source: data.info.image_pixiv, url: resJson.data.link });
+    writeImageCache({ source: info.image_pixiv, url: resJson.data.link });
   }
   return memoryCache.get(imgCacheKey);
 }
