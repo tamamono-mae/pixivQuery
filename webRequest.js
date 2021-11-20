@@ -238,8 +238,16 @@ async function cacheImage(info) {
       redirect: 'follow'
     };
     const resJson = await fetch("https://api.imgur.com/3/upload", requestOptions)
-      .then(response => response.json())
-      .catch(error => console.error('error', error));
+      .then(response => {
+        if(response.status != 200)
+          throw new Error(response.statusText);
+        return response.json();
+      })
+      .catch(error => {
+        console.error('error', error);
+        return { fail: true };
+      });
+    if(resJson.fail) return info.image;
     console.info('Cached');
     memoryCache.put(imgCacheKey, resJson.data.link);
     writeImageCache({ source: info.image_pixiv, url: resJson.data.link });
