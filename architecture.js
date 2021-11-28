@@ -97,7 +97,7 @@ function adminCommandSwitchOrder(interaction) {
       {
         cmd: 'fn',
         action: a.functionConfig,
-        varKey: [ 'name', 'enable' ],
+        varKey: [ 'function' ],
         varExt: { opCode: "functionConfig" }
       },
       {
@@ -109,8 +109,14 @@ function adminCommandSwitchOrder(interaction) {
       {
         cmd: 'manager',
         action: a.managerRoleOp,
-        varKey: [ 'action', 'role' ],
+        varKey: [ 'role' ],
         varExt: { opCode: "managerRoleOp" }
+      },
+      {
+        cmd: 'channel',
+        action: a.channelOp,
+        varKey: [ 'channel' ],
+        varExt: { opCode: "channelOp" }
       }
     ];
   return [];

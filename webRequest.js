@@ -239,6 +239,7 @@ async function cacheImage(info) {
     };
     const resJson = await fetch("https://api.imgur.com/3/upload", requestOptions)
       .then(response => {
+        //Need to enhance of out of rate.
         if(response.status != 200)
           throw new Error(response.statusText);
         return response.json();

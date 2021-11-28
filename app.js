@@ -303,7 +303,7 @@ function functionConfig(interaction, props) {
   let check = false;
   //let botModule = objectCheck.content.split(" ")[1];
   // Check function name is not illigal.
-  props.function = interaction.options.get('name').value;
+  props.function = interaction.options.get('function').value;
   for (i=0;i<sd.functionName.length;i++) {
     if (props.function.match(new RegExp(`^${sd.functionName[i]}`,'gm')) != null){
       check = true;
@@ -318,7 +318,7 @@ function functionConfig(interaction, props) {
     throw new Error('[ info ] Incorrect function name');
   }
   props.isDefault = interaction.options.get('default').value;
-  props.operation = interaction.options.get('enable').value;
+  props.operation = (interaction.options.getSubcommand() == 'enable');
   let functionSwitch = (props.isDefault) ? interaction.guildSwitch : interaction.channelSwitch;
   if (props.operation ==
     ((
@@ -336,7 +336,7 @@ function functionConfig(interaction, props) {
       )
     };
   interaction.reply({
-    content: interaction.options.get('name').value + (props.operation ?   ' 🇴 🇳' : ' 🇴 🇫 🇫'),
+    content: interaction.options.get('function').value + (props.operation ?   ' 🇴 🇳' : ' 🇴 🇫 🇫'),
     ephemeral: true
   });
   dbop.toConfigDB(interaction, writeData, props.isDefault);
@@ -353,7 +353,7 @@ function functionConfig(interaction, props) {
   logInfo.operation =
     props.function +
     (props.operation ? ' enable' : ' disable') +
-    (props.isDefault ? ' global' : '');
+    (props.isDefault ? ' default' : '');
   return [logInfo];
 }
 
@@ -633,7 +633,7 @@ async function registerCommand(interaction, props) {
 async function managerRoleOp(interaction, props) {
   let targetRole = interaction.options.get('role').value;
   let roleList = await dbop.getManagerRole(interaction.guild.id);
-  switch(interaction.options.get('action').value) {
+  switch(interaction.options.getSubcommand()) {
     case 'add':
       if(!interaction.guild.roles.cache.has(targetRole)){
         fn.rejectInteration(interaction, 'roleNotInGuild');
@@ -668,6 +668,11 @@ async function managerRoleOp(interaction, props) {
   initGuildCmd( interaction.guild, roleList );
 }
 
+function channelOp(interaction, props) {
+  console.log(interaction.options.getSubcommand());
+  console.log(interaction.options.get('channel').value);
+}
+
 module.exports = {
   postImageInfo,
   helpMessage,
@@ -681,5 +686,6 @@ module.exports = {
   removeEmbedMsg,
   urlSearch,
   registerCommand,
-  managerRoleOp
+  managerRoleOp,
+  channelOp
 };

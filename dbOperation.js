@@ -1,6 +1,6 @@
 const config = require(require("./shareData.js").configPath);
 const env = require(config.configPath);
-const configTables = ['guildFunction', 'channelFunction', 'guildManager' ];
+const configTables = ['guild_function', 'channel_function', 'guild_manager' ];
 const cacheTables = ['cacheMsg', 'imgurImage'];
 
 const cacheDb = require('knex')({

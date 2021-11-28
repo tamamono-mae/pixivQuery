@@ -22,6 +22,7 @@ const opProps = {
   "setReaction": { perm: 0x18 },
   "registerCommand": { perm: 0x18 },
   "managerRoleOp": { perm: 0x18 },
+  "channelOp": { perm: 0x18 },
   // 1 1 0 0 0
   "removeEmbedMsg": { perm: 0x1C },
   // 1 1 1 0 0
@@ -41,6 +42,59 @@ const commands = [
     defaultPermission: false
   },
   {
+    name: 'fn',
+    description: 'Enable or disable a function.',
+    defaultPermission: false,
+    options: [
+      {
+        name: 'enable',
+        description: 'Enable a function.',
+        type: 1,
+        options: [
+          {
+            name: 'function',
+            description: "The function to enable.",
+            required: true,
+            type: 3,
+            choices: [
+              { name: 'Get image infos', value: 'getImageInfo' },
+              { name: 'Image search', value: 'imgSearch' },
+              { name: 'URL search', value: 'urlSearch' }
+            ]
+          },
+          {
+            name: 'default',
+            description: 'Modifying default setting.',
+            required: true,
+            type: 5
+          }
+        ]
+      },
+      {
+        name: 'disable',
+        description: 'Disable a function.',
+        type: 1,
+        options: [
+          {
+            name: 'function',
+            description: "The function to enable.",
+            required: true,
+            type: 3,
+            choices: [
+              { name: 'Get image infos', value: 'getImageInfo' },
+              { name: 'Image search', value: 'imgSearch' },
+              { name: 'URL search', value: 'urlSearch' }
+            ]
+          },
+          {
+            name: 'default',
+            description: 'Modifying default setting.',
+            required: true,
+            type: 5
+          }
+        ]
+      }
+    ]/*,
     options: [
       {
         name: 'name',
@@ -65,44 +119,76 @@ const commands = [
         required: true,
         type: 5
       },
-    ],
-    name: 'fn',
-    description: 'Activing or deactiving a function.',
-    defaultPermission: false
+    ]*/
   },
   {
+    name: 'set-reaction',
+    description: 'Assigning a reaction to result.',
+    defaultPermission: false,
     options: [{
       name: 'reaction',
       description: 'Reaction',
       required: true,
       type: 3
-    }],
-    name: 'set-reaction',
-    description: 'Assigning a reaction to result.',
-    defaultPermission: false
+    }]
   },
   {
+    name: 'manager',
+    description: 'Add or remove a role that it can modify this application.',
+    defaultPermission: false,
     options: [
       {
-        name: 'action',
-        description: 'Action',
-        required: true,
-        type: 3,
-        choices: [
-          { name: 'Add', value: 'add' },
-          { name: 'Remove', value: 'remove' }
-        ]
+        name: 'add',
+        description: 'Add a role that it can modify this application.',
+        type: 1,
+        options: [{
+          name: 'role',
+          description: 'role',
+          required: true,
+          type: 8
+        }]
       },
       {
-        name: 'role',
-        description: 'Role',
-        required: true,
-        type: 8
+        name: 'remove',
+        description: 'Remove a role that it can modify this application.',
+        type: 1,
+        options: [{
+          name: 'role',
+          description: 'role',
+          required: true,
+          type: 8
+        }]
       }
     ],
-    name: 'manager',
-    description: 'Add or remove a role that can modify this application.',
-    defaultPermission: false
+  },
+  {
+    name: 'channel',
+    description: 'Add or remove a channel to a list.',
+    defaultPermission: false,
+    options: [
+      {
+        name: 'allow',
+        description: 'allow',
+        type: 1,
+        options: [{
+          name: 'channel',
+          description: "The channel will make action by the bot.",
+          required: true,
+          type: 7
+        }]
+      },
+      {
+        name: 'deny',
+        description: 'deny',
+        type: 1,
+        options: [{
+          name: 'channel',
+          description: "The channel will ignore by the bot.",
+          required: true,
+          type: 7
+        }]
+      }
+    ]
   }
 ]
 
