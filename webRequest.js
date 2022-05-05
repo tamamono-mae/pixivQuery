@@ -1,4 +1,4 @@
-const fetch = require("node-fetch");
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const cheerio = require("cheerio");
 const formData = require("form-data");
 const { htmlToText } = require('html-to-text');
