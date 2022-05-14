@@ -19,49 +19,49 @@ const client = new Client({
 });
 //Discordjs fix end
 const logger = winston.createLogger({
-  level: 'info',
-  format: winston.format.json(),
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
-  defaultMeta: { service: 'user-service' },
-  transports: [
-    //new winston.transports.Console(),
-    new winston.transports.File({ filename: npath.join(__dirname, config.pathToLog) })
-  ],
+	level: 'info',
+	format: winston.format.json(),
+	format: winston.format.combine(
+		winston.format.timestamp(),
+		winston.format.json()
+	),
+	defaultMeta: { service: 'user-service' },
+	transports: [
+		//new winston.transports.Console(),
+		new winston.transports.File({ filename: npath.join(__dirname, config.pathToLog) })
+	],
 });
 //const client = new Discord.Client();
 
 function loggerArray(logArray) {
-  if (logArray != null)
-    for(let i=0;i<logArray.length;i++){
-      logger.info(logArray[i]);
-      //console.log(logArray[i]);
-    }
+	if (logArray != null)
+		for(let i=0;i<logArray.length;i++){
+			logger.info(logArray[i]);
+			//console.log(logArray[i]);
+		}
 }
 
 function loggerError(client, e) {
-  logInfo = {
-    error: e.message,
-    sourceId: client.id,
-    sourceUserId: ((client.author == null) ? client.user.id : client.author.id),
-    sourceTimestamp: client.createdTimestamp,
-    sourceContent: client.content,
-    sourceChannelId: client.channel.id,
-    guildSwitch: client.guildSwitch,
-    channelSwitch: client.channelSwitch,
-    reaction: client.configReaction
-  }
-  if (!client.isDm)
-    logInfo['sourceGuildId'] = client.guild.id;
-  logger.error(logInfo);
+	logInfo = {
+		error: e.message,
+		sourceId: client.id,
+		sourceUserId: ((client.author == null) ? client.user.id : client.author.id),
+		sourceTimestamp: client.createdTimestamp,
+		sourceContent: client.content,
+		sourceChannelId: client.channel.id,
+		guildSwitch: client.guildSwitch,
+		channelSwitch: client.channelSwitch,
+		reaction: client.configReaction
+	}
+	if (!client.isDm)
+		logInfo['sourceGuildId'] = client.guild.id;
+	logger.error(logInfo);
 }
 
 client.login(config.BOT_TOKEN);
 
 client.on('interactionCreate', function(interaction) {
-  const start = new Date();
+	const start = new Date();
 	interaction.rts = start;
 	interaction.objType = 'commandInteraction';
 	let reason = preFilter(interaction);
@@ -87,57 +87,57 @@ client.on('interactionCreate', function(interaction) {
 client.on("messageCreate", function(srcMessage) {
 	const { getManagerRole } = require("./dbOperation.js");
 	getManagerRole(srcMessage.guild.id);
-  const start = new Date();
-  srcMessage.isDm = (srcMessage.channel.type == 'dm');
-  srcMessage.isText = (
-    (srcMessage.channel.type == 'GUILD_TEXT') ||
-    (srcMessage.channel.type == 'GUILD_PUBLIC_THREAD') ||
-    (srcMessage.channel.type == 'GUILD_PRIVATE_THREAD')
-  );
+	const start = new Date();
+	srcMessage.isDm = (srcMessage.channel.type == 'dm');
+	srcMessage.isText = (
+		(srcMessage.channel.type == 'GUILD_TEXT') ||
+		(srcMessage.channel.type == 'GUILD_PUBLIC_THREAD') ||
+		(srcMessage.channel.type == 'GUILD_PRIVATE_THREAD')
+	);
 	srcMessage.objType = 'message';
-  if (srcMessage.author.bot || !(srcMessage.isDm || srcMessage.isText)) return;
+	if (srcMessage.author.bot || !(srcMessage.isDm || srcMessage.isText)) return;
 	if (Array.from(srcMessage.attachments.values()).length == 0) {
-    /*// TODO:
+		/*// TODO:
 
 		Add ls function
 			[manager roles, function config, emoji setting, available emojis, ]
 		Add channel managent function
 		Add more token to use token slot
-    Add reset all setting command
+		Add reset all setting command
 		Add cooldown function
-    */
-    arch.setConfig(srcMessage).then(() => {
-      return arch.msgRouter(srcMessage);
-    }).then(logArray => {
-      loggerArray(logArray);
-      const time = new Date() - start;
-      //console.log(time);
-    }).catch(e => {
-      console.error(e);
-      loggerError(srcMessage, e);
-    });
-  } else {
-    arch.setConfig(srcMessage).then(() => {
-      return arch.attachmentRouter(srcMessage);
-    }).then(logArray => {
-      loggerArray(logArray);
-      const time = new Date() - start;
-      //console.log(time);
-    }).catch(e => {
-      console.error(e);
-      loggerError(srcMessage, e);
-    });
-  }
+		*/
+		arch.setConfig(srcMessage).then(() => {
+			return arch.msgRouter(srcMessage);
+		}).then(logArray => {
+			loggerArray(logArray);
+			const time = new Date() - start;
+			//console.log(time);
+		}).catch(e => {
+			console.error(e);
+			loggerError(srcMessage, e);
+		});
+	} else {
+		arch.setConfig(srcMessage).then(() => {
+			return arch.attachmentRouter(srcMessage);
+		}).then(logArray => {
+			loggerArray(logArray);
+			const time = new Date() - start;
+			//console.log(time);
+		}).catch(e => {
+			console.error(e);
+			loggerError(srcMessage, e);
+		});
+	}
 });
 
 client.on('ready', () => {
-  console.info(`[ info ] Logged in as ${client.user.tag}!`);
+	console.info(`[ info ] Logged in as ${client.user.tag}!`);
 	initCmdAll(client);
 	initGlobalCmd(client);
 	setInterval(( () => {
 		initCmdAll(client);
-  } ), 3600000);
-  setInterval(( () => { removeTimeout(86400000) }), 600000);
+	} ), 3600000);
+	setInterval(( () => { removeTimeout(86400000) }), 600000);
 });
 
 client.on("messageDelete", (message) => {

@@ -103,7 +103,10 @@ dist
 # TernJS port file
 .tern-port
 .DS_Store
+
+# Private script and files
 test.js
 Others
 note.js
 remider.js
+package-lock.json
