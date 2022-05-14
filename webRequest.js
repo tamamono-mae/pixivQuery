@@ -212,7 +212,7 @@ async function cacheImage(info) {
 				//Request image from pixiv
 				let imageData = await pixivImageRequest(info.image_pixiv);
 				//Apply data to formdata
-				cacheImgformdata.append("image", imageData.toString('base64'));
+				cacheImgformdata.append("image", Buffer.from(imageData).toString('base64'));
 				cacheImgformdata.append("type", "base64");
 			break;
 			default:
