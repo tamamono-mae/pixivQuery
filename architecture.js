@@ -18,7 +18,7 @@ let switchOrderList = [
     varExt: { opCode: "postImageInfo", website: "pixiv" }
   },
   {
-    patt: /(?<url>^(https|http):\/\/(.+)(.jpg|.png))/i,
+    patt: /(?<url>^(https|http):\/\/(.+)(.jpg|.jpeg|.png))/i,
     action: a.urlSearch,
     varExt: { opCode: "urlSearch" }
   }

@@ -572,7 +572,7 @@ async function postUrl(messageObject ,props) {
 function urlSearch(messageObject, props) {
   let urlPool = [];
   let promisePool = [];
-  let pattern = new RegExp(`(?<url>^(https|http):\/\/(.+)(.jpg|.png))`,'i');
+  let pattern = new RegExp(`(?<url>^(https|http):\/\/(.+)(.jpg|.jpeg|.png))`,'i');
   if (props.opCode == 'imgSearch') {
     for (let i=0;i<props.urls.length;i++) {
       if (props['urls'][i]['attachment'].match(pattern) != null)
