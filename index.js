@@ -98,7 +98,6 @@ client.on("messageCreate", function(srcMessage) {
 	if (srcMessage.author.bot || !(srcMessage.isDm || srcMessage.isText)) return;
 	if (Array.from(srcMessage.attachments.values()).length == 0) {
 		/*// TODO:
-
 		Add ls function
 			[manager roles, function config, emoji setting, available emojis, ]
 		Add channel managent function
