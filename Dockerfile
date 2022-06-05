@@ -6,7 +6,7 @@ RUN npm install
 COPY src/. .
 CMD ["npm","start"]
 
-LABEL Name="auto-dns"
-LABEL description="auto-dns"
+LABEL Name="pixivQuery"
+LABEL description="pixivQuery"
 LABEL version="1.0"
 LABEL maintainer="tamamono-mae@github.com"
