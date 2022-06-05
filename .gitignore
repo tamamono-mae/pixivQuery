@@ -112,6 +112,7 @@ Others
 note.js
 remider.js
 package-lock.json
+config.json
 
 # secret json files
 *.secret.json

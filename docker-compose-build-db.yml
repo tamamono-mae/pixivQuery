@@ -1,0 +1,22 @@
+version: "3.5"  # optional since v1.27.0
+services:
+  pqdb:
+    image: mariadb:latest
+    env_file: ./env/.pqdb.env
+    restart: always
+    ports:
+      - "3307:3306"
+    volumes:
+      - pqdbvol:/var/lib/mysql
+    networks:
+      - nat_bridge
+
+volumes:
+  pqdbvol:
+    external: true
+    name: pixivQuery-db
+
+networks:
+  nat_bridge:
+    driver: bridge
+    external: false
