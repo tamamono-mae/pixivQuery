@@ -15,7 +15,8 @@ const client = new Client({
 		Intents.FLAGS.GUILDS,
 		Intents.FLAGS.GUILD_MESSAGES,
 		Intents.FLAGS.DIRECT_MESSAGES
-	]
+	],
+	partials: ["CHANNEL"]
 });
 //Discordjs fix end
 const logger = winston.createLogger({
@@ -88,7 +89,7 @@ client.on("messageCreate", function(srcMessage) {
 	const { getManagerRole } = require("./dbOperation.js");
 	getManagerRole(srcMessage.guild.id);
 	const start = new Date();
-	srcMessage.isDm = (srcMessage.channel.type == 'dm');
+	srcMessage.isDm = (srcMessage.channel.type == 'DM');
 	srcMessage.isText = (
 		(srcMessage.channel.type == 'GUILD_TEXT') ||
 		(srcMessage.channel.type == 'GUILD_PUBLIC_THREAD') ||
@@ -98,7 +99,6 @@ client.on("messageCreate", function(srcMessage) {
 	if (srcMessage.author.bot || !(srcMessage.isDm || srcMessage.isText)) return;
 	if (Array.from(srcMessage.attachments.values()).length == 0) {
 		/*// TODO:
-
 		Add ls function
 			[manager roles, function config, emoji setting, available emojis, ]
 		Add channel managent function
