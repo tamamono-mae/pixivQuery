@@ -1,20 +1,16 @@
 const config = require(require("./shareData.js").configPath);
 const env = require(config.configPath);
-const configTables = ['guild_function', 'channel_function', 'guild_manager' ];
+const configTables = ['guildFunction', 'channelFunction', 'guildManager' ];
 const cacheTables = ['cacheMsg', 'imgurImage'];
 
 const cacheDb = require('knex')({
-	client: 'sqlite3',
-	connection: {
-		filename: env.pathToCacheDb
-	},
+	client: 'mysql',
+	connection: env.cacheDbConnection,
 	useNullAsDefault: true
 });
 const configDb = require('knex')({
-	client: 'sqlite3',
-	connection: {
-		filename: env.pathToConfigDb
-	},
+	client: 'mysql',
+	connection: env.configDbConnection,
 	useNullAsDefault: true
 });
 
@@ -171,12 +167,16 @@ async function setEmbedMsgCache(interaction) {
 		sourceId: interaction.message.id,
 		sourceUserId: userId,
 		sourceTimestamp: new Date(),
-		sourceContent: interaction.message.embeds[0].url,
+		sourceContent: 
+			interaction.message.embeds.length > 0 ?
+				interaction.message.embeds[0].url : '',
 		sourceChannelId: interaction.channel.id,
 		replyId: interaction.message.id,
 		pageCount: pageValue[1],
 		currentPage: pageValue[0],
-		type: webIcon2Types[interaction.message.embeds[0].author.iconURL],
+		type:
+			interaction.message.embeds.length > 0 ?
+				webIcon2Types[interaction.message.embeds[0].author.iconURL] : 'Other',
 		sourceGuildId: interaction.guild.id
 	}
 }
