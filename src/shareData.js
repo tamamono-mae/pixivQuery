@@ -1,4 +1,4 @@
-const configPath = "../env/config5.json";
+const configPath = "./config.json";
 const permission = {
 	botSendMessage: 412384349248n,
 	botManageMassage: 534790925376n,
@@ -22,7 +22,6 @@ const opProps = {
 	"setReaction": { perm: 0x18 },
 	"registerCommand": { perm: 0x18 },
 	"managerRoleOp": { perm: 0x18 },
-	"channelOp": { perm: 0x18 },
 	// 1 1 0 0 0
 	"removeEmbedMsg": { perm: 0x1C },
 	// 1 1 1 0 0
@@ -43,58 +42,8 @@ const commands = [
 	},
 	{
 		name: 'fn',
-		description: 'Enable or disable a function.',
+		description: 'Activing or deactiving a function.',
 		defaultPermission: false,
-		options: [
-			{
-				name: 'enable',
-				description: 'Enable a function.',
-				type: 1,
-				options: [
-					{
-						name: 'function',
-						description: "The function to enable.",
-						required: true,
-						type: 3,
-						choices: [
-							{ name: 'Get image infos', value: 'getImageInfo' },
-							{ name: 'Image search', value: 'imgSearch' },
-							{ name: 'URL search', value: 'urlSearch' }
-						]
-					},
-					{
-						name: 'default',
-						description: 'Modifying default setting.',
-						required: true,
-						type: 5
-					}
-				]
-			},
-			{
-				name: 'disable',
-				description: 'Disable a function.',
-				type: 1,
-				options: [
-					{
-						name: 'function',
-						description: "The function to enable.",
-						required: true,
-						type: 3,
-						choices: [
-							{ name: 'Get image infos', value: 'getImageInfo' },
-							{ name: 'Image search', value: 'imgSearch' },
-							{ name: 'URL search', value: 'urlSearch' }
-						]
-					},
-					{
-						name: 'default',
-						description: 'Modifying default setting.',
-						required: true,
-						type: 5
-					}
-				]
-			}
-		]/*,
 		options: [
 			{
 				name: 'name',
@@ -119,7 +68,8 @@ const commands = [
 				required: true,
 				type: 5
 			},
-		]*/
+		]
+		
 	},
 	{
 		name: 'set-reaction',
@@ -134,59 +84,24 @@ const commands = [
 	},
 	{
 		name: 'manager',
-		description: 'Add or remove a role that it can modify this application.',
+		description: 'Add or remove a role that can modify this application.',
 		defaultPermission: false,
 		options: [
 			{
-				name: 'add',
-				description: 'Add a role that it can modify this application.',
-				type: 1,
-				options: [{
-					name: 'role',
-					description: 'role',
-					required: true,
-					type: 8
-				}]
+				name: 'action',
+				description: 'Action',
+				required: true,
+				type: 3,
+				choices: [
+					{ name: 'Add', value: 'add' },
+					{ name: 'Remove', value: 'remove' }
+				]
 			},
 			{
-				name: 'remove',
-				description: 'Remove a role that it can modify this application.',
-				type: 1,
-				options: [{
-					name: 'role',
-					description: 'role',
-					required: true,
-					type: 8
-				}]
-			}
-		],
-	},
-	{
-		name: 'channel',
-		description: 'Add or remove a channel to a list.',
-		defaultPermission: false,
-		options: [
-			{
-				name: 'allow',
-				description: 'allow',
-				type: 1,
-				options: [{
-					name: 'channel',
-					description: "The channel will make action by the bot.",
-					required: true,
-					type: 7
-				}]
-			},
-			{
-				name: 'deny',
-				description: 'deny',
-				type: 1,
-				options: [{
-					name: 'channel',
-					description: "The channel will ignore by the bot.",
-					required: true,
-					type: 7
-				}]
+				name: 'role',
+				description: 'Role',
+				required: true,
+				type: 8
 			}
 		]
 	}
