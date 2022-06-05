@@ -120,7 +120,13 @@ async function pixivQuery(illustId, currentPage){
 	let meta_preload_data = JSON.parse($("#meta-preload-data").attr("content"));
 	let data = ($("#meta-preload-data").length > 0) ? {
 		"title": meta_preload_data['illust'][illustId]['illustTitle'],
-		"description": meta_preload_data['illust'][illustId]['illustComment'],
+		"description": htmlToText(meta_preload_data['illust'][illustId]['illustComment'],{
+      selectors: [{
+				selector: 'a',
+				options: { ignoreHref: true }
+			}],
+      wordwrap: false
+    }),
 		"url": "https://www.pixiv.net/artworks/"+meta_preload_data['illust'][illustId]['illustId'],
 		"tags": extractTag(meta_preload_data.illust[illustId].tags.tags),
 		"name": meta_preload_data['illust'][illustId]['userName'],
