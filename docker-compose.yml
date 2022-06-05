@@ -1,0 +1,47 @@
+version: "3.5"  # optional since v1.27.0
+services:
+  pixiv-query:
+    image: pixiv-query
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    volumes:
+      - pqvol:/app/vol
+    networks:
+      - nat_bridge
+      - internal_br_con
+    container_name: pixiv-query
+    depends_on:
+      - pqdb
+    secrets:
+      - pixivQuery.config.json
+  pqdb:
+    image: mariadb:latest
+    restart: always
+    volumes:
+      - pqdbvol:/var/lib/mysql
+    networks:
+      - internal_br_con
+    container_name: pqdb
+
+volumes:
+  pqvol: 
+    external: true
+    name: pixivQuery-data
+  pqdbvol:
+    external: true
+    name: pixivQuery-db
+
+networks:
+  nat_bridge:
+    driver: bridge
+    external: false
+  internal_br_con:
+    driver: bridge
+    internal: true
+    external: false
+
+secrets:
+  pixivQuery.config.json:
+    file: ./secret/pixivQuery.config.secret.json
